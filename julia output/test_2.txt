@@ -1,0 +1,375 @@
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 1
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "d-1"
+	0.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 472
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-4"
+	127.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 473
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-5"
+	170.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 474
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-6"
+	223.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 475
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-7"
+	294.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 476
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-8"
+	357.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 477
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-9"
+	480.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 478
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-10"
+	500.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 479
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-11"
+	587.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 480
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-12"
+	634.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 481
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-13"
+	664.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 482
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-14"
+	679.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 483
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-15"
+	706.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 484
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-16"
+	727.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 485
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-17"
+	762.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 486
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-18"
+	789.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 487
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-19"
+	840.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 488
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-20"
+	880.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 489
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-21"
+	910.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 490
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-22"
+	960.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 491
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-23"
+	1038.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 492
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-24"
+	1068.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 493
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-25"
+	1104.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 494
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-26"
+	1147.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 495
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-27"
+	1177.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 496
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-28"
+	1220.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 497
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-29"
+	1260.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 498
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-30"
+	1291.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 499
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-31"
+	1331.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 500
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-32"
+	1360.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 501
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-33"
+	1415.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 502
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-34"
+	1437.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 503
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-35"
+	1502.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 504
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-36"
+	1537.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 505
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-37"
+	1578.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 506
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-12-38"
+	1606.0
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 2
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "s-1"
+	1929.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 177
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-9"
+	2224.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 178
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-10"
+	2252.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 179
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-11"
+	2310.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 180
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-12"
+	2376.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 181
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-13"
+	2411.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 182
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-14"
+	2440.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 183
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-15"
+	2473.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 184
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-16"
+	2535.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 185
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-17"
+	2589.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 186
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-18"
+	2758.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 187
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-19"
+	2768.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 188
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-20"
+	2788.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 189
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-21"
+	2809.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 190
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-22"
+	2841.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 191
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-23"
+	2864.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 192
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-4-24"
+	2905.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 911
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-29"
+	3283.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 912
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-30"
+	3320.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 913
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-31"
+	3363.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 914
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-32"
+	3397.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 915
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-33"
+	3431.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 916
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-34"
+	3474.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 917
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-35"
+	3504.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 918
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-36"
+	3542.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 919
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-37"
+	3582.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 920
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-38"
+	3623.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 921
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-39"
+	3669.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 922
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-40"
+	3716.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 923
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-41"
+	3749.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 924
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-42"
+	3775.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 925
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-43"
+	3795.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 926
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-44"
+	3836.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 927
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-45"
+	3873.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 928
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-46"
+	3895.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 929
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-47"
+	3924.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 930
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-48"
+	3964.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 931
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "r-23-49"
+	4029.6928814999096
+MAPFTransitVertexState{MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}}
+  idx: Int64 1
+  state: MAPFTransitState{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}
+  vertex_str: String "d-1"
+	4270.9199999283455

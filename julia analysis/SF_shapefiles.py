@@ -131,20 +131,22 @@ def plot_muni_freq(bus_freq, SF_boundary, SF_zoning):
     return
 
 
+
 #execute section
-
-#load the necessary shapefiles
-muni_file_path = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/muni_routes/geo_export_6dee9e27-b549-4312-94b4-5ad68950d5fe.shp'
-SF_boundary_file_path = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/SF Boundary/s7d02x.shp'
-SF_Zoning_file_path = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/SF Zoning/geo_export_486f35c6-390f-4739-8f97-6171581968e5.shp'
-
-muni = load_muni(muni_file_path)
-SF_boundary = load_SF_boundaries(SF_boundary_file_path)
-SF_zoning = load_SF_zoning(SF_Zoning_file_path)
-
-bus_only = muni_bus_only(muni)
-bus_freq, bus_freq_full = add_bus_freq(bus_only)
-
-
-plot_muni(muni, SF_boundary, SF_zoning)
-plot_muni_freq(bus_freq, SF_boundary, SF_zoning)
+if __name__=='__main__':
+   
+    #load the necessary shapefiles
+    muni_file_path = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/muni_routes/geo_export_6dee9e27-b549-4312-94b4-5ad68950d5fe.shp'
+    SF_boundary_file_path = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/SF Boundary/s7d02x.shp'
+    SF_Zoning_file_path = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/SF Zoning/geo_export_486f35c6-390f-4739-8f97-6171581968e5.shp'
+    
+    muni = load_muni(muni_file_path)
+    SF_boundary = load_SF_boundaries(SF_boundary_file_path)
+    SF_zoning = load_SF_zoning(SF_Zoning_file_path)
+    
+    bus_only = muni_bus_only(muni)
+    bus_freq, bus_freq_full = add_bus_freq(bus_only)
+    
+    
+    plot_muni(muni, SF_boundary, SF_zoning)
+    plot_muni_freq(bus_freq, SF_boundary, SF_zoning)
