@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Point
 import SF_shapefiles as SF
 import read_julia_data as read_jl
+from matplotlib.colors import TwoSlopeNorm
 #import distance_matrix_API as API
 
 
@@ -40,8 +41,7 @@ def plot_zoning(SF_zoning):
 def plot_travel_time(fig, ax, gdf):
     gdf.plot(column='full time (min)', 
                 ax=ax,
-                cmap='plasma',
-                vmax=60,
+                cmap='viridis',
                 legend=True,
                 legend_kwds={'label':'Trip Time (minutes)'}) #, 'orientation': 'horizontal'
     plt.title('Hitchhiking Isochrone')
@@ -53,7 +53,7 @@ def plot_depots(fig, ax, gdf):
              markersize=1000,
              color='aqua',
              edgecolor='k',
-             marker='*',
+             marker='H',
              legend_kwds={'label':'Depot'})
     return fig, ax
 
@@ -63,12 +63,20 @@ def plot_bus_routes(fig, ax, gdf):
              alpha=0.5)
     return fig, ax
 
-def plot_drone_rad(fig, ax, gdf): #TODO:need to implement, not working yet
+def plot_drone_rad(fig, ax, gdf, figsize): #TODO:need to implement, not working yet
+
+    gdf.drop_duplicates(subset=['geometry'], inplace=True)
+
     for i in range(len(gdf)):
-        radius = gdf.iloc[i]['geometry'].buffer(250).boundary
-        radius = gpd.GeoSeries(radius)
+        depot_loc = gdf.iloc[i]['geometry']
+        radius = gdf.iloc[i]['geometry'].buffer(3.5/111).boundary
+        radius = gpd.GeoSeries(radius, crs=4326)
         radius.plot(ax=ax,
-                    color='green')
+                    color='k',
+                    linewidth=6,
+                    linestyle='--',
+                    figsize=figsize,
+                    label="Direct, Drone-Only")
     
     return fig, ax
 
@@ -76,8 +84,7 @@ def plot_driving_time(fig, ax, gdf):
     gdf_driving = gdf[gdf['mode'] == 'driving']
     gdf_driving.plot(column='duration (min)', 
                 ax=ax,
-                cmap='plasma',
-                vmax=60,
+                cmap='viridis',
                 legend=True,
                 legend_kwds={'label':'Driving Time (minutes)'})
     plt.title('Driving Isochrone')
@@ -88,8 +95,7 @@ def plot_bicycling_time(fig, ax, gdf):
     gdf_bicycling = gdf[gdf['mode'] == 'bicycling']
     gdf_bicycling.plot(column='duration (min)', 
                 ax=ax,
-                cmap='plasma',
-                vmax=60,
+                cmap='viridis',
                 legend=True,
                 legend_kwds={'label':'Bicycling Time (minutes)'})
     plt.title('Bicycling Isochrone')
@@ -98,27 +104,45 @@ def plot_bicycling_time(fig, ax, gdf):
 
 def plot_delta_driving(fig, ax, gdf):
     gdf_driving = gdf[gdf['mode']=='driving']
-    gdf_driving.plot(column='delta_to_hitch (perc)', 
-                ax=ax,
-                cmap='plasma',
-                vmin=-200,
-                vmax=100,
-                legend=True,
-                legend_kwds={'label':'Percent Difference between Hitchhiking and Driving Time (minutes)'})
-    plt.title('Percent Difference Hitchhiking and Driving Isochrone')
+    vmin, vmax, vcenter = -2, max(gdf_driving['delta_to_hitch (perc)']), 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
+    norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
+    cmap='RdBu'
+    cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    
+    gdf_driving.plot(column='delta_to_hitch (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
+    #fig.colorbar(cbar, ax=ax)
+    
+    # gdf_driving.plot(column='delta_to_hitch (perc)', 
+    #             ax=ax,
+    #             cmap='plasma',
+    #             vmin=-200,
+    #             vmax=100,
+    #             legend=True,
+    #             legend_kwds={'label':'Percent Difference between Hitchhiking and Driving Time (minutes)'})
+    plt.title('Percent Difference in Trip Time Isochrone (Hitchhiking to Driving')
     
     return fig, ax
 
 def plot_delta_bicycling(fig, ax, gdf):
     gdf_bicycling = gdf[gdf['mode']=='bicycling']
-    gdf_bicycling.plot(column='delta_to_hitch (perc)', 
-                ax=ax,
-                cmap='plasma',
-                vmin=-200,
-                vmax=100,
-                legend=True,
-                legend_kwds={'label':'Percent Difference between Hitchhiking and Bicycling Time (minutes)'})
-    plt.title('Percent Difference Hitchhiking and Bicycling Isochrone')
+    
+    vmin, vmax, vcenter = min(gdf_bicycling['delta_to_hitch (perc)']), max(gdf_bicycling['delta_to_hitch (perc)']), 0
+    norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
+    cmap='RdBu'
+    cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    
+    gdf_bicycling.plot(column='delta_to_hitch (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
+    
+    
+    # gdf_bicycling.plot(column='delta_to_hitch (perc)', 
+    #             ax=ax,
+    #             cmap='plasma',
+    #             vmin=-200,
+    #             vmax=100,
+    #             legend=True,
+    #             legend_kwds={'label':'Percent Difference between Hitchhiking and Bicycling Time (minutes)'})
+    plt.title('Percent Difference in Trip Time Isochrone (Hitchhiking to Bicycling)')
+
     
     return fig, ax
 
@@ -129,7 +153,7 @@ if __name__ == '__main__':
 
     #----------------------------Read in the Julia Data------------------------
     #set the results parent folder
-    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-01-30 (d_100_s_100_iter_20)'
+    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-02-16 (d_100_s_100_iter_100_2281_sites)' #01-30 (d_100_s_100_iter_20)
     
     #load the depot locations
     d_file_paths = read_jl.data_paths(file_path + '/depots/*.dat')
@@ -146,12 +170,22 @@ if __name__ == '__main__':
     t_file_path = read_jl.data_paths(file_path + '/states/*.dat')
     trips = read_jl.load_trips(t_file_path)
     
+    #load the actions for each trip, t
+    a_file_path = read_jl.data_paths(file_path + '/actions/*.dat')
+    actions = read_jl.load_actions(a_file_path)
+    
     #compile each of the travel time from the depot to the site
     trip_time_df, trips_gdf = read_jl.compile_trip_time(trips)
     
+    #compile the flight distance for the trip
+    trip_dist_df = read_jl.compile_trip_dist(trip_time_df, actions)
+    
+    #combine trip time and dist dataframes
+    trip_main_gdf = read_jl.combine_trip_time_dist(trips_gdf, trip_dist_df)
+    
     
     #-------------------------Read in the API data-----------------------------
-    API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-01-30/API_results.dat'
+    API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-02-16 (2281 sites)/API_results.dat'
     with open(API_file, 'rb') as temp:
         API_res = pickle.load(temp)
         temp.close() 
@@ -165,9 +199,10 @@ if __name__ == '__main__':
     
     
     #-------------------------Combine the datasets-----------------------------
-    combined_gdf = pd.merge(API_gdf, trip_time_df, how='left')
+    combined_gdf = pd.merge(API_gdf, trip_main_gdf, how='left')
+    combined_gdf = combined_gdf[combined_gdf['Total Dist'] <= 7]
     combined_gdf['delta_to_hitch'] = combined_gdf['duration (min)'] - combined_gdf['full time (min)']
-    combined_gdf['delta_to_hitch (perc)'] = (combined_gdf['delta_to_hitch'] / combined_gdf['duration (min)'])*100
+    combined_gdf['delta_to_hitch (perc)'] = (combined_gdf['delta_to_hitch'] / combined_gdf['duration (min)'])
     
     #removing Julia direct drone flights out over the water, temporary fix for now
     
@@ -189,7 +224,7 @@ if __name__ == '__main__':
     bus_only = SF.muni_bus_only(muni)
     bus_freq, bus_freq_full = SF.add_bus_freq(bus_only)
     
-    
+    #plot the bus routes
     SF.plot_muni(muni, SF_boundary, SF_zoning)
     SF.plot_muni_freq(bus_freq, SF_boundary, SF_zoning)
     
@@ -200,8 +235,18 @@ if __name__ == '__main__':
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_travel_time(fig, ax, trips_gdf)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    #fig, ax = plot_drone_rad(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, figsize=(10,10))
     
+    
+    #----Remove bug points from Hitchhiking data
+    trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    fig, ax = plot_zoning(SF_zoning)
+    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_travel_time(fig, ax, trip_main_feas_gdf)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, figsize=(10,10))
     
     #plot the API data for driving
     fig, ax = init_fig(figsize=(10,10))
@@ -228,6 +273,7 @@ if __name__ == '__main__':
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_driving(fig, ax, combined_gdf)
     fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, figsize=(10,10))
     
     
     #plot the delta between hitchhiking and bicycling
@@ -237,3 +283,4 @@ if __name__ == '__main__':
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_bicycling(fig, ax, combined_gdf)
     fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, figsize=(10,10))

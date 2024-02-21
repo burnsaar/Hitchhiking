@@ -45,6 +45,19 @@ def load_trips(files):
         df_ls.append(df)
     return df_ls
 
+def load_actions(files):
+    df_ls = []
+    iteration = 1
+    for file in files:
+        df = pd.read_csv(file, delimiter='\t', header=None, names=['action', 'distance'])
+        df['Iteration'] = str(iteration)
+        iteration += 1
+        # with open(file, 'rb') as temp:
+        #     res.append(pickle.load(temp))
+        #     temp.close() 
+        df_ls.append(df)
+    return df_ls
+
 def compile_depots(depots_df):
     df = depots_df #.drop_duplicates(subset=['Lat']) #subset=['Lat', 'Lon']
     geometry = [Point(x,y) for x,y in zip(df['Lon'], df['Lat'])]
@@ -74,14 +87,36 @@ def compile_trip_time(trips):
         
     return trip_time_df, geo_df
 
+def compile_trip_dist(trip_time_df, actions):
+    df_ls =[]
+    i=0
+    for action in actions:
+        #get the index of the delivery site location
+        site_vertex_idx = trip_time_df.iloc[i]['Vertex Index']
+        #collect the trip out and back time from
+        dist_out = np.sum(action['distance'][:site_vertex_idx])
+        dist_back = np.sum(action['distance'][site_vertex_idx:])
+        dist_total = dist_out + dist_back
+        
+        dist_ls = [dist_out, dist_back, dist_total]
+        df_ls.append(dist_ls)
+        
+        i+=1
+    trip_dist_df = pd.DataFrame(df_ls, columns=['Dist Out', 'Dist Back', 'Total Dist'])
+    
+    return trip_dist_df
 
-
+def combine_trip_time_dist(trips_df, trip_dist_df):
+    
+    df = pd.concat([trips_df, trip_dist_df], axis=1)
+    
+    return df
 
 
 if __name__ == '__main__':
     
     #set the results parent folder
-    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-01-30'
+    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-02-16 (d_100_s_100_iter_100_2281_sites)'
     
     #load the depot locations
     d_file_paths = data_paths(file_path + '/depots/*.dat')
@@ -98,8 +133,18 @@ if __name__ == '__main__':
     t_file_path = data_paths(file_path + '/states/*.dat')
     trips = load_trips(t_file_path)
     
+    #load the actions for each trip, t
+    a_file_path = data_paths(file_path + '/actions/*.dat')
+    actions = load_actions(a_file_path)
+    
     #compile each of the travel time from the depot to the site
     trip_time_df, trips_gdf = compile_trip_time(trips)
+    
+    #compile the flight distance for the trip
+    trip_dist_df = compile_trip_dist(trip_time_df, actions)
+    
+    #combine trip time and dist dataframes
+    trip_main_df = combine_trip_time_dist(trips_gdf, trip_dist_df)
     
     
     

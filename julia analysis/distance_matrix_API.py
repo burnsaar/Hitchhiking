@@ -13,7 +13,7 @@ if __name__ == '__main__':
 #--------------Load Julia data---------------------------------------------------------------------------------------------
 
     #set the results parent folder
-    #file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-01-30 (d_100_s_100_iter_20)'
+    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-02-16 (d_100_s_100_iter_100_2281_sites)'
 
 
     #load the states for each trip, t
@@ -89,7 +89,7 @@ if __name__ == '__main__':
             mode_ls.append(mode)
 
             
-            print("i")
+            print(i)
 
 
 

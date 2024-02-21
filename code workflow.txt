@@ -1,0 +1,10 @@
+isochrone analysis workflow
+
+- run gen_sites in spyder to create all possible site locations, outputs a .dat file with lat/lon
+
+- input sites into Julia file and run julia to calculate the hitchhiking segments (VSCode to view, julia REPL cd to folder, activate ., run include("execute.jl"), outputs actions, depots, sites, states
+
+- input into spyder and connect with the API to get travel time 
+
+- run the plot_hitchhiking script to see the comparison plots
+
