@@ -16,6 +16,7 @@ from shapely.geometry import Point
 import SF_shapefiles as SF
 import read_julia_data as read_jl
 from matplotlib.colors import TwoSlopeNorm
+import trip_recharging as recharging
 #import distance_matrix_API as API
 
 
@@ -63,20 +64,55 @@ def plot_bus_routes(fig, ax, gdf):
              alpha=0.5)
     return fig, ax
 
-def plot_drone_rad(fig, ax, gdf, figsize): #TODO:need to implement, not working yet
+def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
 
     gdf.drop_duplicates(subset=['geometry'], inplace=True)
 
     for i in range(len(gdf)):
         depot_loc = gdf.iloc[i]['geometry']
-        radius = gdf.iloc[i]['geometry'].buffer(3.5/111).boundary
+        radius = gdf.iloc[i]['geometry'].buffer(delivery_radius/111).boundary
         radius = gpd.GeoSeries(radius, crs=4326)
         radius.plot(ax=ax,
                     color='k',
-                    linewidth=6,
+                    linewidth=4,
                     linestyle='--',
                     figsize=figsize,
-                    label="Direct, Drone-Only")
+                    label="Direct, Drone-Only",
+                    alpha=0.8)
+    
+    return fig, ax
+
+def plot_recharging_stations(fig, ax, gdf, delivery_radius, figsize):
+    
+    gdf.plot(ax=ax,
+             legend=True,
+             markersize=1000,
+             color='orange',
+             edgecolor='k',
+             marker='H',
+             legend_kwds={'label':'Recharge Locations'})
+    
+    for i in range(len(gdf)):
+        recharge_loc = gdf.iloc[i]['geometry']
+        radius = gdf.iloc[i]['geometry'].buffer(delivery_radius/111).boundary
+        radius = gpd.GeoSeries(radius, crs=4326)
+        radius.plot(ax=ax,
+                    color='k',
+                    linewidth=4,
+                    linestyle='--',
+                    figsize=figsize,
+                    label="Direct, Drone-Only",
+                    alpha=0.8)
+        
+    return fig, ax
+
+def plot_recharing_trips(fig, ax, gdf):
+    gdf.plot(column='trip time (min)', 
+                ax=ax,
+                cmap='viridis',
+                legend=True,
+                legend_kwds={'label':'Trip Time (minutes)'}) #, 'orientation': 'horizontal'
+    plt.title('Recharging Isochrone')
     
     return fig, ax
 
@@ -100,6 +136,17 @@ def plot_bicycling_time(fig, ax, gdf):
                 legend_kwds={'label':'Bicycling Time (minutes)'})
     plt.title('Bicycling Isochrone')
     
+    return fig, ax
+
+def plot_delta_recharging(fig, ax, gdf):
+    vmin, vmax, vcenter = -2, max(gdf['delta_to_hitch (perc)']), 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
+    norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
+    cmap='RdBu'
+    cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    
+    gdf.plot(column='delta_to_hitch (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
+    
+    plt.title('Percent Difference in Trip Time Isochrone (Hitchhiking to Recharging')
     return fig, ax
 
 def plot_delta_driving(fig, ax, gdf):
@@ -183,6 +230,9 @@ if __name__ == '__main__':
     #combine trip time and dist dataframes
     trip_main_gdf = read_jl.combine_trip_time_dist(trips_gdf, trip_dist_df)
     
+    #------------------------Parameters----------------------------------------
+    delivery_radius = 3.5 #km
+    
     
     #-------------------------Read in the API data-----------------------------
     API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-02-16 (2281 sites)/API_results.dat'
@@ -198,14 +248,41 @@ if __name__ == '__main__':
     API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:4326", geometry=geometry)
     
     
+    #-------------------------Calc the recharging case-------------------------
+    # #set the recharging configuration
+    recharge_loc = {'Loc': ['1', '2', '3', '4', '5'], #config for 3.5km radius
+                    'Lat': [37.73200, 37.73200, 37.78350, 37.78350, 37.76554], 
+                    'Lon': [-122.43000, -122.47750, -122.41200, -122.46000, -122.48750]
+                    }
+    recharge_loc_df = pd.DataFrame(recharge_loc)
+    geometry = [Point(x,y) for x,y in zip(recharge_loc['Lon'], recharge_loc['Lat'])]
+    recharge_gdf = gpd.GeoDataFrame(recharge_loc, crs='EPSG:4326', geometry=geometry)
+    
+   
+    #path_ls, shortest_dist_ls = recharging.gen_recharge_trips(sites, depots_df, recharge_loc_df, delivery_radius)
+    
+    recharge_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/recharging results/2024-02-28/recharging_trips.dat'
+    with open(recharge_file, 'rb') as temp:
+        recharge_trip_df = pickle.load(temp)
+        temp.close() 
+    
+    recharge_trip_df['trip time (min)'] = recharge_trip_df['Shortest Dist (km)'] / 0.00777 / 60 *2
+    
+    geometry = [Point(x,y) for x,y in zip(recharge_trip_df['Lon'], recharge_trip_df['Lat'])]
+    recharge_trip_gdf = gpd.GeoDataFrame(recharge_trip_df, crs="EPSG:4326", geometry=geometry)
+    recharge_trip_gdf = recharge_trip_gdf[recharge_trip_gdf['trip time (min)'] < 120]
+    
     #-------------------------Combine the datasets-----------------------------
     combined_gdf = pd.merge(API_gdf, trip_main_gdf, how='left')
+    #combined_gdf = pd.merge(combined_gdf, recharge_trip_gdf, how='left')
     combined_gdf = combined_gdf[combined_gdf['Total Dist'] <= 7]
     combined_gdf['delta_to_hitch'] = combined_gdf['duration (min)'] - combined_gdf['full time (min)']
     combined_gdf['delta_to_hitch (perc)'] = (combined_gdf['delta_to_hitch'] / combined_gdf['duration (min)'])
     
-    #removing Julia direct drone flights out over the water, temporary fix for now
-    
+    combined_gdf_recharging = pd.merge(recharge_trip_gdf, trip_main_gdf, how='left')
+    combined_gdf_recharging = combined_gdf_recharging[combined_gdf_recharging['Total Dist'] <= 7]
+    combined_gdf_recharging['delta_to_hitch'] = combined_gdf_recharging['trip time (min)'] - combined_gdf_recharging['full time (min)']
+    combined_gdf_recharging['delta_to_hitch (perc)'] = (combined_gdf_recharging['delta_to_hitch'] / combined_gdf_recharging['trip time (min)'])
     
     #---------------------------Plotting---------------------------------------
     plt.rcParams['figure.dpi'] = 500
@@ -235,7 +312,7 @@ if __name__ == '__main__':
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_travel_time(fig, ax, trips_gdf)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, figsize=(10,10))
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     
     #----Remove bug points from Hitchhiking data
@@ -246,7 +323,27 @@ if __name__ == '__main__':
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_travel_time(fig, ax, trip_main_feas_gdf)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, figsize=(10,10))
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    #plot the recharging locations with data
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    fig, ax = plot_zoning(SF_zoning)
+    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fix, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    
+    #plot the recharging trip
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    fig, ax = plot_zoning(SF_zoning)
+    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fix, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    fig, ax = plot_recharing_trips(fig, ax, recharge_trip_gdf)
+    
     
     #plot the API data for driving
     fig, ax = init_fig(figsize=(10,10))
@@ -266,6 +363,17 @@ if __name__ == '__main__':
     fig, ax = plot_depots(fig, ax, depots_gdf)
     
     
+    #plot the delta between hitchhiking and recharging
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    fig, ax = plot_zoning(SF_zoning)
+    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_delta_recharging(fig, ax, combined_gdf_recharging)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fix, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    
     #plot the delta between hitchhiking and cars
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
@@ -273,7 +381,7 @@ if __name__ == '__main__':
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_driving(fig, ax, combined_gdf)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, figsize=(10,10))
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     
     #plot the delta between hitchhiking and bicycling
@@ -283,4 +391,4 @@ if __name__ == '__main__':
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_bicycling(fig, ax, combined_gdf)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, figsize=(10,10))
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
