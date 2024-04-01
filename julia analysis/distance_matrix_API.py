@@ -54,8 +54,14 @@ if __name__ == '__main__':
     distance_ls = []
     duration_ls = []
     mode_ls = []
-
-    API_date = datetime(2024, 5, 15, 10) #should be 15 May 2024 at 10am
+    
+    #both manually calculating the time since epoch 1970 and datetime give you the total seconds since Jan 1 1970 which is needed for the API
+    # dt = datetime(2024, 5, 15, 10)
+    # epoch_time = datetime(1970, 1, 1)
+    # datetime_UTC = (dt - epoch_time).total_seconds()
+    # print(datetime_UTC)
+    
+    API_date = datetime(2024, 5, 15, 17) #should be 15 May 2024 at 10am or 5pm as the second case
 
     for i in range(len(trip_time_df)):
         for mode in ['driving', 'bicycling']:
@@ -69,7 +75,7 @@ if __name__ == '__main__':
                                                         destinations=destinations,
                                                         mode=mode,
                                                         departure_time=API_date,
-                                                        traffic_model="best_guess",
+                                                        traffic_model="pessimistic", #"best guess"
                                                         units='metric')
             else:
                 response = googlemaps.client.distance_matrix(client=API_key, 
@@ -110,7 +116,7 @@ if __name__ == '__main__':
         os.makedirs(folder_path)
 
 
-    save_file = os.path.join(folder_path, 'API_results.dat')
+    save_file = os.path.join(folder_path, 'API_results_pessimistic_1700.dat')
 
     with open(save_file, 'wb') as file:
         pickle.dump(response_dict, file)

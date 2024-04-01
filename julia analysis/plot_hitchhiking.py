@@ -17,8 +17,11 @@ import SF_shapefiles as SF
 import read_julia_data as read_jl
 from matplotlib.colors import TwoSlopeNorm
 import trip_recharging as recharging
+import math
 #import distance_matrix_API as API
 
+def roundup(x, base=5): #https://stackoverflow.com/questions/26454649/python-round-up-to-the-nearest-ten
+    return base * math.ceil(x/base) #https://stackoverflow.com/questions/2272149/round-to-5-or-other-number-in-python
 
 def init_fig(figsize):
     fig, ax = plt.subplots(figsize = figsize)
@@ -39,14 +42,40 @@ def plot_zoning(SF_zoning):
                    edgecolor='k')
     return fig, ax
 
-def plot_travel_time(fig, ax, gdf):
+def plot_travel_time(fig, ax, gdf, vmin, vmax):
     gdf.plot(column='full time (min)', 
                 ax=ax,
                 cmap='viridis',
                 legend=True,
-                legend_kwds={'label':'Trip Time (minutes)'}) #, 'orientation': 'horizontal'
+                legend_kwds={'label':'Trip Time (minutes)'},
+                vmin=vmin,
+                vmax=vmax) #, 'orientation': 'horizontal'
     plt.title('Hitchhiking Isochrone')
     return fig, ax
+
+def plot_hitchhiking_time_boundaries(fig, ax, gdf, vmin, vmax):
+    
+    polys = []
+    mag = []
+    for item in gdf['dur boundary'].unique():
+        subset = gdf[gdf['dur boundary'] == item] #get a subset of the datapoints within a driving range
+        polygon = subset.unary_union.convex_hull #find the boundary of this subset of datapoints
+        polys.append(polygon) #save the polygon
+        mag.append(item) #save the magnitude of the driving distance
+        
+    boundary_dict = {'hitchhiking time': mag, 'geometry': polys}
+    gdf_boundaries = gpd.GeoDataFrame(boundary_dict)
+    
+    gdf_boundaries.plot(column='hitchhiking time',
+                        ax=ax,
+                        cmap='viridis',
+                        legend=True,
+                        legend_kwds={'label':'Hitchhiking Time (minutes)'},
+                        vmin=vmin,
+                        vmax=vmax,
+                        alpha = 0.75)
+        
+    return fig, ax, gdf_boundaries
 
 def plot_depots(fig, ax, gdf):
     gdf.plot(ax=ax,
@@ -106,40 +135,96 @@ def plot_recharging_stations(fig, ax, gdf, delivery_radius, figsize):
         
     return fig, ax
 
-def plot_recharing_trips(fig, ax, gdf):
+def plot_recharing_trips(fig, ax, gdf, vmin, vmax):
     gdf.plot(column='trip time (min)', 
                 ax=ax,
                 cmap='viridis',
                 legend=True,
-                legend_kwds={'label':'Trip Time (minutes)'}) #, 'orientation': 'horizontal'
+                legend_kwds={'label':'Trip Time (minutes)'},
+                vmin=vmin,
+                vmax=vmax) #, 'orientation': 'horizontal'
     plt.title('Recharging Isochrone')
     
     return fig, ax
 
-def plot_driving_time(fig, ax, gdf):
+def plot_driving_time(fig, ax, gdf, vmin, vmax):
     gdf_driving = gdf[gdf['mode'] == 'driving']
     gdf_driving.plot(column='duration (min)', 
                 ax=ax,
                 cmap='viridis',
                 legend=True,
-                legend_kwds={'label':'Driving Time (minutes)'})
+                legend_kwds={'label':'Driving Time (minutes)'},
+                vmin=vmin,
+                vmax=vmax)
     plt.title('Driving Isochrone')
     
     return fig, ax
 
-def plot_bicycling_time(fig, ax, gdf):
+def plot_driving_time_boundaries(fig, ax, gdf, vmin, vmax):
+    gdf_driving = gdf[gdf['mode'] == 'driving']
+    
+    polys = []
+    mag = []
+    for item in gdf_driving['dur boundary'].unique():
+        subset = gdf_driving[gdf_driving['dur boundary'] == item] #get a subset of the datapoints within a driving range
+        polygon = subset.unary_union.convex_hull #find the boundary of this subset of datapoints
+        polys.append(polygon) #save the polygon
+        mag.append(item) #save the magnitude of the driving distance
+        
+    boundary_dict = {'driving time': mag, 'geometry': polys}
+    gdf_boundaries = gpd.GeoDataFrame(boundary_dict)
+    
+    gdf_boundaries.plot(column='driving time',
+                        ax=ax,
+                        cmap='viridis',
+                        legend=True,
+                        legend_kwds={'label':'Driving Time (minutes)'},
+                        vmin=vmin,
+                        vmax=vmax,
+                        alpha = 1)
+        
+    return fig, ax, gdf_boundaries
+
+def plot_bicycling_time(fig, ax, gdf, vmin, vmax):
     gdf_bicycling = gdf[gdf['mode'] == 'bicycling']
     gdf_bicycling.plot(column='duration (min)', 
                 ax=ax,
                 cmap='viridis',
                 legend=True,
-                legend_kwds={'label':'Bicycling Time (minutes)'})
+                legend_kwds={'label':'Bicycling Time (minutes)'},
+                vmin=vmin,
+                vmax=vmax)
     plt.title('Bicycling Isochrone')
     
     return fig, ax
 
-def plot_delta_recharging(fig, ax, gdf):
-    vmin, vmax, vcenter = -2, max(gdf['delta_to_hitch (perc)']), 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
+def plot_bicycling_time_boundaries(fig, ax, gdf, vmin, vmax):
+    gdf_bicycling = gdf[gdf['mode'] == 'bicycling']
+    
+    polys = []
+    mag = []
+    for item in gdf_bicycling['dur boundary'].unique():
+        subset = gdf_bicycling[gdf_bicycling['dur boundary'] == item] #get a subset of the datapoints within a driving range
+        polygon = subset.unary_union.convex_hull #find the boundary of this subset of datapoints
+        polys.append(polygon) #save the polygon
+        mag.append(item) #save the magnitude of the driving distance
+        
+    boundary_dict = {'bicycling time': mag, 'geometry': polys}
+    gdf_boundaries = gpd.GeoDataFrame(boundary_dict)
+    
+    gdf_boundaries.plot(column='bicycling time',
+                        ax=ax,
+                        cmap='viridis',
+                        legend=True,
+                        legend_kwds={'label':'bicycling Time (minutes)'},
+                        vmin=vmin,
+                        vmax=vmax,
+                        alpha = 0.5)
+        
+    return fig, ax, gdf_boundaries
+
+def plot_delta_recharging(fig, ax, gdf, vmin, vmax):
+    vmin, vmax, vcenter = -2, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
@@ -149,9 +234,9 @@ def plot_delta_recharging(fig, ax, gdf):
     plt.title('Percent Difference in Trip Time Isochrone (Hitchhiking to Recharging')
     return fig, ax
 
-def plot_delta_driving(fig, ax, gdf):
+def plot_delta_driving(fig, ax, gdf, vmin, vmax):
     gdf_driving = gdf[gdf['mode']=='driving']
-    vmin, vmax, vcenter = -2, max(gdf_driving['delta_to_hitch (perc)']), 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
+    vmin, vmax, vcenter = -2, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
@@ -170,10 +255,10 @@ def plot_delta_driving(fig, ax, gdf):
     
     return fig, ax
 
-def plot_delta_bicycling(fig, ax, gdf):
+def plot_delta_bicycling(fig, ax, gdf, vmin, vmax):
     gdf_bicycling = gdf[gdf['mode']=='bicycling']
     
-    vmin, vmax, vcenter = min(gdf_bicycling['delta_to_hitch (perc)']), max(gdf_bicycling['delta_to_hitch (perc)']), 0
+    vmin, vmax, vcenter = -2, vmax, 0
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
@@ -235,7 +320,11 @@ if __name__ == '__main__':
     
     
     #-------------------------Read in the API data-----------------------------
-    API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-02-16 (2281 sites)/API_results.dat'
+    API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-02-16 (2281 sites)_datetime1000/API_results.dat' #10am driving traffic
+    #API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-27 (2281 sites)_datetime1700/API_results.dat' #5pm driving traffic
+    #API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-27 (2281 sites)_UTCseconds1700/API_results.dat' #5pm driving traffic
+    #API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-28 (2281 sites)_datetime1700_pessimistic/API_results.dat' #5pm driving traffic
+    
     with open(API_file, 'rb') as temp:
         API_res = pickle.load(temp)
         temp.close() 
@@ -284,6 +373,44 @@ if __name__ == '__main__':
     combined_gdf_recharging['delta_to_hitch'] = combined_gdf_recharging['trip time (min)'] - combined_gdf_recharging['full time (min)']
     combined_gdf_recharging['delta_to_hitch (perc)'] = (combined_gdf_recharging['delta_to_hitch'] / combined_gdf_recharging['trip time (min)'])
     
+    #-------------------------get the min and max values-----------------------
+    #get the vmin and vmax values for trip time across modes
+    trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
+    
+    vmin_trip = min(min(trip_main_feas_gdf['full time (min)']),
+               min(recharge_trip_gdf['trip time (min)']),
+               min(API_gdf['duration (min)'])
+               )
+    vmax_trip = max(max(trip_main_feas_gdf['full time (min)']),
+               max(recharge_trip_gdf['trip time (min)']),
+               max(API_gdf['duration (min)'])
+               )
+    
+    #get the vmin and vmax values for trip time across modes    
+    vmin_trip_perc = min(min(combined_gdf['delta_to_hitch (perc)']),
+                    min(combined_gdf_recharging['delta_to_hitch (perc)'])
+                    )
+    vmax_trip_perc = max(max(combined_gdf['delta_to_hitch (perc)']),
+                    max(combined_gdf_recharging['delta_to_hitch (perc)'])
+                    )
+    
+    #-------------------------Making boundaries--------------------------------
+    
+    base = 1
+    
+    API_gdf['dur boundary'] = [roundup(API_gdf.iloc[i]['duration (min)'], base=base) for i in range(len(API_gdf))]
+    
+    API_gdf_driving = API_gdf[API_gdf['mode'] == 'driving']
+    API_gdf_bicycling = API_gdf[API_gdf['mode'] == 'bicycling']
+    
+    # for item in API_gdf_driving['dur boundary'].unique():
+    #     print(item)
+    #     subset = API_gdf_driving[API_gdf_driving['dur boundary'] == item]
+    #     q = subset.unary_union.convex_hull
+    #     gpd.GeoSeries(q).plot()
+            
+    trip_main_feas_gdf['dur boundary'] = [roundup(trip_main_feas_gdf.iloc[i]['full time (min)'], base=base) for i in range(len(trip_main_feas_gdf))]
+    
     #---------------------------Plotting---------------------------------------
     plt.rcParams['figure.dpi'] = 500
     
@@ -305,23 +432,45 @@ if __name__ == '__main__':
     SF.plot_muni(muni, SF_boundary, SF_zoning)
     SF.plot_muni_freq(bus_freq, SF_boundary, SF_zoning)
     
-    #plot the hitchhiking drone travel time graphic
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_travel_time(fig, ax, trips_gdf)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    # #get the vmin and vmax values for trip time across modes
+    # trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
+    
+    # vmin_trip = min(min(trip_main_feas_gdf['full time (min)']),
+    #            min(recharge_trip_gdf['trip time (min)']),
+    #            min(API_gdf['duration (min)'])
+    #            )
+    # vmax_trip = max(max(trip_main_feas_gdf['full time (min)']),
+    #            max(recharge_trip_gdf['trip time (min)']),
+    #            max(API_gdf['duration (min)'])
+    #            )
+    
+    # #plot the hitchhiking drone travel time graphic
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # fig, ax = plot_zoning(SF_zoning)
+    # fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_travel_time(fig, ax, trips_gdf)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     
     #----Remove bug points from Hitchhiking data
-    trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
+    #trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
     fig, ax = plot_zoning(SF_zoning)
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_travel_time(fig, ax, trip_main_feas_gdf)
+    fig, ax = plot_travel_time(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    #boundaries version
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    fig, ax = plot_zoning(SF_zoning)
+    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax, gdf_hitchiking_boundaries = plot_hitchhiking_time_boundaries(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
@@ -342,7 +491,7 @@ if __name__ == '__main__':
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     fix, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
-    fig, ax = plot_recharing_trips(fig, ax, recharge_trip_gdf)
+    fig, ax = plot_recharing_trips(fig, ax, recharge_trip_gdf, vmin_trip, vmax_trip)
     
     
     #plot the API data for driving
@@ -350,7 +499,15 @@ if __name__ == '__main__':
     fig, ax = plot_boundary(SF_boundary)
     fig, ax = plot_zoning(SF_zoning)
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_driving_time(fig, ax, API_gdf)
+    fig, ax = plot_driving_time(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    
+    #plot the API data for driving
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    fig, ax = plot_zoning(SF_zoning)
+    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax, gdf_driving_boundaries = plot_driving_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     
     
@@ -359,8 +516,25 @@ if __name__ == '__main__':
     fig, ax = plot_boundary(SF_boundary)
     fig, ax = plot_zoning(SF_zoning)
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_bicycling_time(fig, ax, API_gdf)
+    fig, ax = plot_bicycling_time(fig, ax, API_gdf, vmin_trip, vmax_trip)
     fig, ax = plot_depots(fig, ax, depots_gdf)
+    
+    #plot the API data for bicycling
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    fig, ax = plot_zoning(SF_zoning)
+    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax, gdf_bicycling_boundaries = plot_bicycling_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    
+    
+    # #get the vmin and vmax values for trip time across modes    
+    # vmin_trip_perc = min(min(combined_gdf['delta_to_hitch (perc)']),
+    #                 min(combined_gdf_recharging['delta_to_hitch (perc)'])
+    #                 )
+    # vmax_trip_perc = max(max(combined_gdf['delta_to_hitch (perc)']),
+    #                 max(combined_gdf_recharging['delta_to_hitch (perc)'])
+    #                 )
     
     
     #plot the delta between hitchhiking and recharging
@@ -368,7 +542,7 @@ if __name__ == '__main__':
     fig, ax = plot_boundary(SF_boundary)
     fig, ax = plot_zoning(SF_zoning)
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_recharging(fig, ax, combined_gdf_recharging)
+    fig, ax = plot_delta_recharging(fig, ax, combined_gdf_recharging, vmin_trip_perc, vmax_trip_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fix, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
@@ -379,7 +553,7 @@ if __name__ == '__main__':
     fig, ax = plot_boundary(SF_boundary)
     fig, ax = plot_zoning(SF_zoning)
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_driving(fig, ax, combined_gdf)
+    fig, ax = plot_delta_driving(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
@@ -389,6 +563,6 @@ if __name__ == '__main__':
     fig, ax = plot_boundary(SF_boundary)
     fig, ax = plot_zoning(SF_zoning)
     fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_bicycling(fig, ax, combined_gdf)
+    fig, ax = plot_delta_bicycling(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
