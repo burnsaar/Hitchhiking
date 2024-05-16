@@ -18,6 +18,7 @@ import read_julia_data as read_jl
 from matplotlib.colors import TwoSlopeNorm
 import trip_recharging as recharging
 import math
+#import geoplot as gplt
 #import distance_matrix_API as API
 
 def roundup(x, base=5): #https://stackoverflow.com/questions/26454649/python-round-up-to-the-nearest-ten
@@ -49,7 +50,20 @@ def plot_travel_time(fig, ax, gdf, vmin, vmax):
                 legend=True,
                 legend_kwds={'label':'Trip Time (minutes)'},
                 vmin=vmin,
-                vmax=vmax) #, 'orientation': 'horizontal'
+                vmax=vmax
+                ) #, 'orientation': 'horizontal'
+    plt.title('Hitchhiking Isochrone')
+    return fig, ax
+
+def plot_CO2_emissions(fig, ax, gdf, vmin, vmax):
+    gdf.plot(column='CO2 Emissions', 
+                ax=ax,
+                cmap='viridis',
+                legend=True,
+                legend_kwds={'label':'CO2 Emissions (kg)'},
+                vmin=vmin,
+                vmax=vmax
+                ) #, 'orientation': 'horizontal'
     plt.title('Hitchhiking Isochrone')
     return fig, ax
 
@@ -80,10 +94,10 @@ def plot_hitchhiking_time_boundaries(fig, ax, gdf, vmin, vmax):
 def plot_depots(fig, ax, gdf):
     gdf.plot(ax=ax,
              legend=True,
-             markersize=1000,
-             color='aqua',
+             markersize=1500,
+             color='darkorange',
              edgecolor='k',
-             marker='H',
+             marker='p',
              legend_kwds={'label':'Depot'})
     return fig, ax
 
@@ -115,10 +129,10 @@ def plot_recharging_stations(fig, ax, gdf, delivery_radius, figsize):
     
     gdf.plot(ax=ax,
              legend=True,
-             markersize=1000,
-             color='orange',
+             markersize=1500,
+             color='darkorange',
              edgecolor='k',
-             marker='H',
+             marker='P',
              legend_kwds={'label':'Recharge Locations'})
     
     for i in range(len(gdf)):
@@ -136,7 +150,7 @@ def plot_recharging_stations(fig, ax, gdf, delivery_radius, figsize):
     return fig, ax
 
 def plot_recharing_trips(fig, ax, gdf, vmin, vmax):
-    gdf.plot(column='trip time (min)', 
+    gdf.plot(column='one-way trip time (min)', 
                 ax=ax,
                 cmap='viridis',
                 legend=True,
@@ -147,16 +161,42 @@ def plot_recharing_trips(fig, ax, gdf, vmin, vmax):
     
     return fig, ax
 
+def plot_recharing_CO2(fig, ax, gdf, vmin, vmax):
+    gdf.plot(column='CO2 Emissions Recharging', 
+                ax=ax,
+                cmap='viridis',
+                legend=True,
+                legend_kwds={'label':'CO2 Emissions(kg))'},
+                vmin=vmin,
+                vmax=vmax) #, 'orientation': 'horizontal'
+    plt.title('Recharging Isochrone')
+    
+    return fig, ax
+
 def plot_driving_time(fig, ax, gdf, vmin, vmax):
     gdf_driving = gdf[gdf['mode'] == 'driving']
-    gdf_driving.plot(column='duration (min)', 
+    gdf_driving.plot(column='duration in traffic (min)', 
                 ax=ax,
                 cmap='viridis',
                 legend=True,
                 legend_kwds={'label':'Driving Time (minutes)'},
                 vmin=vmin,
                 vmax=vmax)
-    plt.title('Driving Isochrone')
+    plt.title('Driving Isochrone (with traffic)')
+    
+    return fig, ax
+
+def plot_driving_CO2_emissions(fig, ax, gdf, vmin, vmax):
+    gdf_driving = gdf[gdf['mode'] == 'driving']
+    gdf_driving.plot(column='CO2 Emissions Driving', 
+                ax=ax,
+                cmap='viridis',
+                vmin=vmin,
+                vmax=vmax,
+                legend=True,
+                legend_kwds={'label':'CO2 Emissions (kg)'}
+                )
+    plt.title('CO2 Emissions Isochrone - Driving')
     
     return fig, ax
 
@@ -187,6 +227,20 @@ def plot_driving_time_boundaries(fig, ax, gdf, vmin, vmax):
 
 def plot_bicycling_time(fig, ax, gdf, vmin, vmax):
     gdf_bicycling = gdf[gdf['mode'] == 'bicycling']
+    gdf_bicycling.plot(column='duration no traffic (min)', 
+                ax=ax,
+                cmap='viridis',
+                legend=True,
+                legend_kwds={'label':'Bicycling Time (minutes)'},
+                vmin=vmin,
+                vmax=vmax)
+    plt.title('Bicycling Isochrone (no traffic)')
+    
+    return fig, ax
+
+def plot_bicycling_time_contour(fig, ax, gdf, vmin, vmax):
+    gdf_bicycling = gdf[gdf['mode'] == 'bicycling']
+    gplt.kdeplot(gdf, )
     gdf_bicycling.plot(column='duration (min)', 
                 ax=ax,
                 cmap='viridis',
@@ -195,6 +249,20 @@ def plot_bicycling_time(fig, ax, gdf, vmin, vmax):
                 vmin=vmin,
                 vmax=vmax)
     plt.title('Bicycling Isochrone')
+    
+    return fig, ax
+
+def plot_bicycling_CO2_emissions(fig, ax, gdf, vmin, vmax):
+    gdf_bicycling = gdf[gdf['mode'] == 'bicycling']
+    gdf_bicycling.plot(column='CO2 Emissions Bicycling', 
+                ax=ax,
+                cmap='viridis',
+                vmin=vmin,
+                vmax=vmax,
+                legend=True,
+                legend_kwds={'label':'CO2 Emissions (kg)'}
+                )
+    plt.title('CO2 Emissions Isochrone - Bicycling')
     
     return fig, ax
 
@@ -224,67 +292,87 @@ def plot_bicycling_time_boundaries(fig, ax, gdf, vmin, vmax):
     return fig, ax, gdf_boundaries
 
 def plot_delta_recharging(fig, ax, gdf, vmin, vmax):
-    vmin, vmax, vcenter = -2, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
+    vmin, vmax, vcenter = -160, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
     gdf.plot(column='delta_to_hitch (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
     
-    plt.title('Percent Difference in Trip Time Isochrone (Hitchhiking to Recharging')
+    plt.title('Percent Difference in Trip Time Isochrone (Recharging - Hitchhiking)')
     return fig, ax
 
-def plot_delta_driving(fig, ax, gdf, vmin, vmax):
-    gdf_driving = gdf[gdf['mode']=='driving']
-    vmin, vmax, vcenter = -2, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
+def plot_delta_CO2_recharging(fig, ax, gdf, vmin, vmax):
+    vmin, vmax, vcenter = -175, vmax, 0
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
-    gdf_driving.plot(column='delta_to_hitch (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
-    #fig.colorbar(cbar, ax=ax)
+    gdf.plot(column='delta_to_hitch CO2 (perc)', ax=ax, cmap=cmap, norm=norm, legend=True) #norm=norm, 
+
+    plt.title('Percent Difference in CO2 Isochrone (Recharging - Hitchhiking)')
+
+    return fig, ax
+
+def plot_delta_driving(fig, ax, gdf, vmin, vmax):
+    gdf_driving = gdf[gdf['mode']=='driving']
+    vmin, vmax, vcenter = -160, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
+    norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
+    cmap='RdBu'
+    cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
-    # gdf_driving.plot(column='delta_to_hitch (perc)', 
-    #             ax=ax,
-    #             cmap='plasma',
-    #             vmin=-200,
-    #             vmax=100,
-    #             legend=True,
-    #             legend_kwds={'label':'Percent Difference between Hitchhiking and Driving Time (minutes)'})
-    plt.title('Percent Difference in Trip Time Isochrone (Hitchhiking to Driving')
+    gdf_driving.plot(column='delta_to_hitch time driving (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
+
+    plt.title('Percent Difference in Trip Time Isochrone (Driving - Hitchhiking)')
+    
+    return fig, ax
+
+def plot_delta_CO2_driving(fig, ax, gdf, vmin, vmax):
+    gdf_driving = gdf[gdf['mode']=='driving']
+    vmin, vmax, vcenter = -175, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
+    norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
+    cmap='RdBu'
+    cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    
+    gdf_driving.plot(column='delta_to_hitch CO2 driving (perc)', ax=ax, cmap=cmap, norm=norm, legend=True) #norm=norm, 
+
+    plt.title('Percent Difference in CO2 Isochrone (Driving - Hitchhiking)')
     
     return fig, ax
 
 def plot_delta_bicycling(fig, ax, gdf, vmin, vmax):
     gdf_bicycling = gdf[gdf['mode']=='bicycling']
     
-    vmin, vmax, vcenter = -2, vmax, 0
+    vmin, vmax, vcenter = -160, vmax, 0
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
-    gdf_bicycling.plot(column='delta_to_hitch (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
+    gdf_bicycling.plot(column='delta_to_hitch time bicycling (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
     
-    
-    # gdf_bicycling.plot(column='delta_to_hitch (perc)', 
-    #             ax=ax,
-    #             cmap='plasma',
-    #             vmin=-200,
-    #             vmax=100,
-    #             legend=True,
-    #             legend_kwds={'label':'Percent Difference between Hitchhiking and Bicycling Time (minutes)'})
-    plt.title('Percent Difference in Trip Time Isochrone (Hitchhiking to Bicycling)')
+    plt.title('Percent Difference in Trip Time Isochrone (Bicycling - Hitchhiking)')
 
-    
     return fig, ax
 
+def plot_delta_CO2_bicycling(fig, ax, gdf, vmin, vmax):
+    gdf_bicycling = gdf[gdf['mode']=='bicycling']
+    vmin, vmax, vcenter = -175, vmax, 0
+    norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
+    cmap='RdBu'
+    cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    
+    gdf_bicycling.plot(column='delta_to_hitch CO2 bicycling (perc)', ax=ax, cmap=cmap, norm=norm, legend=True) #norm=norm, 
+
+    plt.title('Percent Difference in CO2 Isochrone (Bicycling - Hitchhiking)')
+
+    return fig, ax
 
 
 
 if __name__ == '__main__':
 
     #----------------------------Read in the Julia Data------------------------
-    #set the results parent folder
+    #set the results parent folder for the hitchhiking data
     file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-02-16 (d_100_s_100_iter_100_2281_sites)' #01-30 (d_100_s_100_iter_20)
     
     #load the depot locations
@@ -315,6 +403,12 @@ if __name__ == '__main__':
     #combine trip time and dist dataframes
     trip_main_gdf = read_jl.combine_trip_time_dist(trips_gdf, trip_dist_df)
     
+    #get the vmin and vmax values for trip time across modes
+    trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
+    
+    #add CO2 emissions
+    trip_main_feas_gdf['CO2 Emissions'] = trip_main_feas_gdf['Total Dist'] * 0.070  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
+    
     #------------------------Parameters----------------------------------------
     delivery_radius = 3.5 #km
     
@@ -323,14 +417,44 @@ if __name__ == '__main__':
     API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-02-16 (2281 sites)_datetime1000/API_results.dat' #10am driving traffic
     #API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-27 (2281 sites)_datetime1700/API_results.dat' #5pm driving traffic
     #API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-27 (2281 sites)_UTCseconds1700/API_results.dat' #5pm driving traffic
-    #API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-28 (2281 sites)_datetime1700_pessimistic/API_results.dat' #5pm driving traffic
+    API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-28 (2281 sites)_datetime1700_pessimistic/API_results.dat' #5pm driving traffic
     
     with open(API_file, 'rb') as temp:
         API_res = pickle.load(temp)
         temp.close() 
         
     API_df = pd.DataFrame(API_res)
-    API_df['duration (min)'] = API_df['duration']/60
+    #need to correct the old API data, was pulling the "duration", but not the "duration-in-traffic", need this for peak hour analysis
+    API_df.rename(columns={"duration":"duration no traffic"}, inplace=True)
+    
+    #split out the driving API runs so that I can adjust duration to duration in traffic (not a parameter for biking)
+    API_driving = API_df[API_df['mode'] == 'driving']
+    API_driving.reset_index(inplace=True)
+    API_bicycling = API_df[API_df['mode'] == 'bicycling']
+    API_bicycling.reset_index(inplace=True)
+    
+    #pull out the duration in traffic data from the API response
+    dur_traffic_ls = [API_driving['response'][i]['rows'][0]['elements'][0]['duration_in_traffic']['value'] for i in range(len(API_driving))]
+    #add the duration in traffic data to the dataframe
+    API_driving['duration in traffic'] = dur_traffic_ls
+        
+    #scale the duration in traffic appropriately
+    API_driving['duration in traffic (min)'] = API_driving['duration in traffic']/60
+    
+    #still scale the bicycling and driving duration as well
+    API_bicycling['duration no traffic (min)'] = API_bicycling['duration no traffic']/60
+    #API_driving['duration no traffic (min)'] = API_driving['duration no traffic']/60
+    
+    #add in the CO2 emissions estimates
+    #API_driving['Fuel Consumption (gal)'] = API_driving['distance']/1000*0.621371 / 24.4 #https://afdc.energy.gov/data/10310
+    API_driving['avg speed'] = (API_driving['distance']/1000*0.621371) / (API_driving['duration in traffic (min)']/60) #speed in miles per hour
+    API_driving['Fuel Consumption (gal)'] = API_driving['duration in traffic (min)']/60* (1/(24.4*(1/API_driving['avg speed']))) #1.025 based on 24.4 MPG car efficienct, 25 mph hour average speed
+    API_driving['CO2 Emissions Driving'] = API_driving['Fuel Consumption (gal)'] * 8.887 #kg on CO2 per gallon
+    API_bicycling['CO2 Emissions Bicycling'] = API_bicycling['distance']/1000 * 0.054 #CO2 emitted per km  #http://large.stanford.edu/courses/2022/ph240/schutt2/
+    
+    #API_df = API_driving.merge(right=API_bicycling, how='inner', on='destinations').fillna(0)
+    API_df = pd.concat([API_bicycling, API_driving])
+    API_df.set_index('index', drop=True, inplace=True)
     
     #create GeoDataFrame as well
     geometry = [Point(x,y) for x,y in zip(API_df['Lon'], API_df['Lat'])]
@@ -355,50 +479,115 @@ if __name__ == '__main__':
         recharge_trip_df = pickle.load(temp)
         temp.close() 
     
-    recharge_trip_df['trip time (min)'] = recharge_trip_df['Shortest Dist (km)'] / 0.00777 / 60 *2
+    recharge_trip_df['Shortest Round-Trip Dist (km)'] = recharge_trip_df['Shortest Dist (km)'] * 2
+    recharge_trip_df['one-way trip time (min)'] = recharge_trip_df['Shortest Round-Trip Dist (km)'] / 0.00777 / 60 / 2 #divide by 2 to get the one-way trip time
     
     geometry = [Point(x,y) for x,y in zip(recharge_trip_df['Lon'], recharge_trip_df['Lat'])]
     recharge_trip_gdf = gpd.GeoDataFrame(recharge_trip_df, crs="EPSG:4326", geometry=geometry)
-    recharge_trip_gdf = recharge_trip_gdf[recharge_trip_gdf['trip time (min)'] < 120]
+    recharge_trip_gdf = recharge_trip_gdf[recharge_trip_gdf['one-way trip time (min)'] < 120] #remove some weird outliers with 4,290 minutes of trip time
     
+
     #-------------------------Combine the datasets-----------------------------
-    combined_gdf = pd.merge(API_gdf, trip_main_gdf, how='left')
+    combined_gdf = pd.merge(API_gdf, trip_main_feas_gdf, how='inner')
     #combined_gdf = pd.merge(combined_gdf, recharge_trip_gdf, how='left')
-    combined_gdf = combined_gdf[combined_gdf['Total Dist'] <= 7]
-    combined_gdf['delta_to_hitch'] = combined_gdf['duration (min)'] - combined_gdf['full time (min)']
-    combined_gdf['delta_to_hitch (perc)'] = (combined_gdf['delta_to_hitch'] / combined_gdf['duration (min)'])
+    #combined_gdf = combined_gdf[combined_gdf['Total Dist'] <= 7]
+    combined_gdf['delta_to_hitch time driving'] = combined_gdf['duration in traffic (min)'] - combined_gdf['full time (min)']
+    combined_gdf['delta_to_hitch time driving (perc)'] = (combined_gdf['delta_to_hitch time driving'] / combined_gdf['duration in traffic (min)'])*100
+    
+    combined_gdf['delta_to_hitch time bicycling'] = combined_gdf['duration no traffic (min)'] - combined_gdf['full time (min)']
+    combined_gdf['delta_to_hitch time bicycling (perc)'] = (combined_gdf['delta_to_hitch time bicycling'] / combined_gdf['duration no traffic (min)'])*100
+    
+    combined_gdf['delta_to_hitch CO2 driving'] = combined_gdf['CO2 Emissions Driving'] - combined_gdf['CO2 Emissions']
+    combined_gdf['delta_to_hitch CO2 driving (perc)'] = (combined_gdf['delta_to_hitch CO2 driving'] / combined_gdf['CO2 Emissions Driving'])*100
+    
+    combined_gdf['delta_to_hitch CO2 bicycling'] = combined_gdf['CO2 Emissions Bicycling'] - combined_gdf['CO2 Emissions']
+    combined_gdf['delta_to_hitch CO2 bicycling (perc)'] = (combined_gdf['delta_to_hitch CO2 bicycling'] / combined_gdf['CO2 Emissions Bicycling'])*100
+    
     
     combined_gdf_recharging = pd.merge(recharge_trip_gdf, trip_main_gdf, how='left')
     combined_gdf_recharging = combined_gdf_recharging[combined_gdf_recharging['Total Dist'] <= 7]
-    combined_gdf_recharging['delta_to_hitch'] = combined_gdf_recharging['trip time (min)'] - combined_gdf_recharging['full time (min)']
-    combined_gdf_recharging['delta_to_hitch (perc)'] = (combined_gdf_recharging['delta_to_hitch'] / combined_gdf_recharging['trip time (min)'])
+    combined_gdf_recharging['delta_to_hitch'] = combined_gdf_recharging['one-way trip time (min)'] - combined_gdf_recharging['full time (min)']
+    combined_gdf_recharging['delta_to_hitch (perc)'] = (combined_gdf_recharging['delta_to_hitch'] / combined_gdf_recharging['one-way trip time (min)'])*100
+    
+    combined_gdf_recharging['CO2 Emissions Recharging'] = combined_gdf_recharging['Shortest Round-Trip Dist (km)'] * 0.070  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
+    combined_gdf_recharging['CO2 Emissions Hitchhiking'] = combined_gdf_recharging['Total Dist'] * 0.070  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
+    
+    combined_gdf_recharging['delta_to_hitch CO2'] = combined_gdf_recharging['CO2 Emissions Recharging'] - combined_gdf_recharging['CO2 Emissions Hitchhiking']
+    combined_gdf_recharging['delta_to_hitch CO2 (perc)'] = (combined_gdf_recharging['delta_to_hitch CO2'] / combined_gdf_recharging['CO2 Emissions Recharging'])*100
+    
     
     #-------------------------get the min and max values-----------------------
-    #get the vmin and vmax values for trip time across modes
-    trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
+
     
-    vmin_trip = min(min(trip_main_feas_gdf['full time (min)']),
-               min(recharge_trip_gdf['trip time (min)']),
-               min(API_gdf['duration (min)'])
-               )
-    vmax_trip = max(max(trip_main_feas_gdf['full time (min)']),
-               max(recharge_trip_gdf['trip time (min)']),
-               max(API_gdf['duration (min)'])
-               )
+    # vmin_trip = min(min(trip_main_feas_gdf['full time (min)']),
+    #            min(recharge_trip_gdf['trip time (min)']),
+    #            min(API_gdf['duration (min)'])
+    #            )
+    # vmax_trip = max(max(trip_main_feas_gdf['full time (min)']),
+    #            max(recharge_trip_gdf['trip time (min)']),
+    #            max(API_gdf['duration (min)'])
+    #            )
+    vmin_trip = min(min(combined_gdf['full time (min)']),
+                    min(API_bicycling['duration no traffic (min)']),
+                    min(API_driving['duration in traffic (min)']),
+                    min(recharge_trip_gdf['one-way trip time (min)'])
+                    )
+    vmax_trip = max(max(combined_gdf['full time (min)']),
+                    max(API_bicycling['duration no traffic (min)']),
+                    max(API_driving['duration in traffic (min)']),
+                    max(recharge_trip_gdf['one-way trip time (min)'])
+                    )
+    
+    # vmax_trip = max(max(trip_main_feas_gdf['full time (min)']),
+    #            max(recharge_trip_gdf['trip time (min)']),
+    #            max(API_gdf['duration (min)'])
+    #            )
+    
+    #need to subset combined_gdf into driving and bicycling in order to pull out percentages instead of nan values when data is missing
+    combined_gdf_driving = combined_gdf[combined_gdf['mode'] == 'driving']
+    combined_gdf_bicycling = combined_gdf[combined_gdf['mode'] == 'bicycling']
     
     #get the vmin and vmax values for trip time across modes    
-    vmin_trip_perc = min(min(combined_gdf['delta_to_hitch (perc)']),
-                    min(combined_gdf_recharging['delta_to_hitch (perc)'])
+    vmin_trip_perc = min(min(combined_gdf_driving['delta_to_hitch time driving (perc)']),
+                         min(combined_gdf_bicycling['delta_to_hitch time bicycling (perc)']),
+                         min(combined_gdf_recharging['delta_to_hitch (perc)'])
+                         )
+    vmax_trip_perc = max(max(combined_gdf_driving['delta_to_hitch time driving (perc)']),
+                         max(combined_gdf_bicycling['delta_to_hitch time bicycling (perc)']),
+                         max(combined_gdf_recharging['delta_to_hitch (perc)'])
+                         )
+    
+    #add the CO2 min and max value TODO
+    
+    vmin_CO2 = min(min(combined_gdf['CO2 Emissions']),
+                    min(API_bicycling['CO2 Emissions Bicycling']),
+                    min(API_driving['CO2 Emissions Driving']),
+                    min(combined_gdf_recharging['CO2 Emissions Recharging'])
                     )
-    vmax_trip_perc = max(max(combined_gdf['delta_to_hitch (perc)']),
-                    max(combined_gdf_recharging['delta_to_hitch (perc)'])
+    vmax_CO2 = max(max(combined_gdf['CO2 Emissions']),
+                    max(API_bicycling['CO2 Emissions Bicycling']),
+                    max(API_driving['CO2 Emissions Driving']),
+                    max(combined_gdf_recharging['CO2 Emissions Recharging'])
                     )
+    
+    vmin_CO2_perc = min(min(combined_gdf_driving['delta_to_hitch CO2 driving (perc)']),
+                    min(combined_gdf_bicycling['delta_to_hitch CO2 bicycling (perc)']),
+                    min(combined_gdf_recharging['delta_to_hitch CO2 (perc)'])
+                    )
+    vmax_CO2_perc = max(max(combined_gdf_driving['delta_to_hitch CO2 driving (perc)']),
+                    max(combined_gdf_bicycling['delta_to_hitch CO2 bicycling (perc)']),
+                    max(combined_gdf_recharging['delta_to_hitch CO2 (perc)'])
+                    )
+    
+    
+    
+    
     
     #-------------------------Making boundaries--------------------------------
+    # section is not really needed
+    #base = 1
     
-    base = 1
-    
-    API_gdf['dur boundary'] = [roundup(API_gdf.iloc[i]['duration (min)'], base=base) for i in range(len(API_gdf))]
+    #API_gdf['dur boundary'] = [roundup(API_gdf.iloc[i]['duration (min)'], base=base) for i in range(len(API_gdf))]
     
     API_gdf_driving = API_gdf[API_gdf['mode'] == 'driving']
     API_gdf_bicycling = API_gdf[API_gdf['mode'] == 'bicycling']
@@ -409,7 +598,10 @@ if __name__ == '__main__':
     #     q = subset.unary_union.convex_hull
     #     gpd.GeoSeries(q).plot()
             
-    trip_main_feas_gdf['dur boundary'] = [roundup(trip_main_feas_gdf.iloc[i]['full time (min)'], base=base) for i in range(len(trip_main_feas_gdf))]
+    #trip_main_feas_gdf['dur boundary'] = [roundup(trip_main_feas_gdf.iloc[i]['full time (min)'], base=base) for i in range(len(trip_main_feas_gdf))]
+    
+    
+    
     
     #---------------------------Plotting---------------------------------------
     plt.rcParams['figure.dpi'] = 500
@@ -459,73 +651,105 @@ if __name__ == '__main__':
     #trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_travel_time(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
-    #boundaries version
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax, gdf_hitchiking_boundaries = plot_hitchhiking_time_boundaries(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_CO2_emissions(fig, ax, trip_main_feas_gdf, vmin_CO2, vmax_CO2) 
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    # #boundaries version
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # fig, ax = plot_zoning(SF_zoning)
+    # fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax, gdf_hitchiking_boundaries = plot_hitchhiking_time_boundaries(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     #plot the recharging locations with data
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
-    fix, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
     
     #plot the recharging trip
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_recharing_trips(fig, ax, combined_gdf_recharging, vmin_trip, vmax_trip)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
-    fix, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
-    fig, ax = plot_recharing_trips(fig, ax, recharge_trip_gdf, vmin_trip, vmax_trip)
+    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_recharing_CO2(fig, ax, combined_gdf_recharging, vmin_CO2, vmax_CO2)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+
     
     
     #plot the API data for driving
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_driving_time(fig, ax, API_gdf, vmin_trip, vmax_trip)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     
-    #plot the API data for driving
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax, gdf_driving_boundaries = plot_driving_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_driving_CO2_emissions(fig, ax, API_gdf, vmin_CO2, vmax_CO2) #TODO, update vmin_trip and vmax_trip to CO2 numbers
     fig, ax = plot_depots(fig, ax, depots_gdf)
+    
+    # #plot the API data for driving
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # fig, ax = plot_zoning(SF_zoning)
+    # fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax, gdf_driving_boundaries = plot_driving_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
     
     
     #plot the API data for bicycling
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_bicycling_time(fig, ax, API_gdf, vmin_trip, vmax_trip)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     
-    #plot the API data for bicycling
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax, gdf_bicycling_boundaries = plot_bicycling_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_bicycling_CO2_emissions(fig, ax, API_gdf, vmin_CO2, vmax_CO2)
     fig, ax = plot_depots(fig, ax, depots_gdf)
+    
+    # #plot the API data for bicycling
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # fig, ax = plot_zoning(SF_zoning)
+    # fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax, gdf_bicycling_boundaries = plot_bicycling_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
     
     
     # #get the vmin and vmax values for trip time across modes    
@@ -537,32 +761,58 @@ if __name__ == '__main__':
     #                 )
     
     
-    #plot the delta between hitchhiking and recharging
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_recharging(fig, ax, combined_gdf_recharging, vmin_trip_perc, vmax_trip_perc)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fix, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+
     
     
-    #plot the delta between hitchhiking and cars
+    #plot the trip time delta
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_driving(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
-    
-    #plot the delta between hitchhiking and bicycling
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
-    fig, ax = plot_zoning(SF_zoning)
-    fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_bicycling(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_delta_recharging(fig, ax, combined_gdf_recharging, vmin_trip_perc, vmax_trip_perc)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    
+    #plot the CO2 delta
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_delta_CO2_driving(fig, ax, combined_gdf, vmin_CO2_perc, vmax_CO2_perc)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_delta_CO2_bicycling(fig, ax, combined_gdf, vmin_CO2_perc, vmax_CO2_perc)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    fig, ax = init_fig(figsize=(10,10))
+    fig, ax = plot_boundary(SF_boundary)
+    #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_delta_CO2_recharging(fig, ax, combined_gdf_recharging, vmin_CO2_perc, vmax_CO2_perc)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
     fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))

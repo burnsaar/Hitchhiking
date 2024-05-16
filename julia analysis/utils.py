@@ -23,20 +23,33 @@ def plot_boundary(fig, ax, SF_boundary):
 
 def plot_zoning(fig, ax, SF_zoning):
     SF_zoning.plot(ax=ax, 
-                   legend = True,
+                   legend=True,
                    edgecolor='k',
-                   legend_kwds={'label':'Zoned PDR-2'}
-                   )
-    plt.legend()
-    return fig, ax
+                   hatch='/'
+                   ) #                   legend_kwds={'label':'Zoned PDR-2'}
+    ax.legend(['Zoned PDR-2'], loc='center left', bbox_to_anchor=(1, 0.5), fontsize=20) #['Zoned PDR-2'], 
+    handles, previous_labels = ax.get_legend_handles_labels()
+    return fig, ax, handles, previous_labels
 
-def plot_depots(fig, ax, gdf, marker='H', color='aqua', legend_kwds={'label':'Depot'}):
+def plot_depots(fig, ax, gdf, handles, previous_labels, marker='p', color='darkorange', legend_kwds={'label':'Depot'}):
     gdf.plot(ax=ax,
              legend=True,
-             markersize=500,
+             markersize=1500,
              color=color,
              edgecolor='k',
              marker=marker,
              legend_kwds=legend_kwds)
-    ax.legend(legend_kwds)
+    
+    ax.legend(['Zoned PDR-2', 'Depot Location'], loc='center left', bbox_to_anchor=(1, 0.5), fontsize=20)
+    plt.title('Depot Location and Zoning in San Francisco', fontsize=24)
+    
     return fig, ax
+
+
+
+
+    # handles, previous_labels = ax.get_legend_handles_labels() #https://stackoverflow.com/questions/23037548/change-main-plot-legend-label-text
+    # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    # if mylabels != None:
+    #     plt.legend(title = 'Scenarios:', handles=handles, labels=mylabels, loc='center left', bbox_to_anchor=(0.25, -0.4))
+    # plt.figure()

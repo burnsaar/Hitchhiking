@@ -36,7 +36,7 @@ SF_zoning = SF.load_SF_zoning(SF_Zoning_file_path)
 #set up Depot geodataframes
 depot = {'depot': [1]}
 df = pd.DataFrame(depot)
-geometry = [Point(-122.399483, 37.745084)]
+geometry = [Point(-122.4012, 37.744045)]
 depot_config_parcel_gdf = gpd.GeoDataFrame(df, crs="EPSG:4326", geometry=geometry)
 
 #depot_config_pharm
@@ -54,7 +54,7 @@ depot_config_food_gdf = gpd.GeoDataFrame(df, crs="EPSG:4326", geometry=geometry)
 #plot the hitchhiking drone travel time graphic
 fig, ax = utils.init_fig(figsize=(10,10))
 fig, ax = utils.plot_boundary(fig, ax, SF_boundary)
-fig, ax = utils.plot_zoning(fig, ax, SF_zoning)
-fig, ax = utils.plot_depots(fig, ax, depot_config_parcel_gdf, legend_kwds={'label':'Parcel Facility'})
-fig, ax = utils.plot_depots(fig, ax, depot_config_pharm_gdf, color='red', legend_kwds={'label':'Pharma'})
-fig, ax = utils.plot_depots(fig, ax, depot_config_food_gdf, color='green', legend_kwds={'label': 'Restaurant'})
+fig, ax, handles, previous_labels = utils.plot_zoning(fig, ax, SF_zoning)
+fig, ax = utils.plot_depots(fig, ax, depot_config_parcel_gdf, handles, previous_labels, marker='p', color='darkorange', legend_kwds={'label':'Parcel Facility'})
+# fig, ax = utils.plot_depots(fig, ax, depot_config_pharm_gdf, color='red', legend_kwds={'label':'Pharma'})
+# fig, ax = utils.plot_depots(fig, ax, depot_config_food_gdf, color='green', legend_kwds={'label': 'Restaurant'})

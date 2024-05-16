@@ -101,7 +101,7 @@ if __name__ == '__main__':
                     else:
                         edges.append(dist)
                 else:
-                    if dist > 2*delivery_radius:
+                    if dist > 2*delivery_radius:  #if the delivery is still too far, more than 2x the delivery radius, make this path value large and not selectable
                         edges.append(1001)
                     else:            
                         edges.append(dist)
@@ -114,8 +114,8 @@ if __name__ == '__main__':
 
         D, Pr = shortest_path(M, directed=True, method='auto', return_predecessors=True)
 
-        Path = get_path(Pr, 0, 6)
-        Shortest_dist = D[0,6]
+        Path = get_path(Pr, 0, 6) #zero is the depot, 6 is the delivery destination
+        Shortest_dist = D[0,6] #one-way trip distance from the depot to the delivery destination
         
         Path_ls.append(Path)
         Shortest_dist_ls.append(Shortest_dist)
