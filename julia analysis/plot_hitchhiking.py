@@ -18,6 +18,7 @@ import read_julia_data as read_jl
 from matplotlib.colors import TwoSlopeNorm
 import trip_recharging as recharging
 import math
+#import contextily as cx
 #import geoplot as gplt
 #import distance_matrix_API as API
 
@@ -25,6 +26,7 @@ def roundup(x, base=5): #https://stackoverflow.com/questions/26454649/python-rou
     return base * math.ceil(x/base) #https://stackoverflow.com/questions/2272149/round-to-5-or-other-number-in-python
 
 def init_fig(figsize):
+    #fig, ax = plt.subplots(figsize = figsize)
     fig, ax = plt.subplots(figsize = figsize)
     plt.xlim([-122.52480, -122.33907])
     plt.ylim([37.70, 37.84])
@@ -92,6 +94,7 @@ def plot_hitchhiking_time_boundaries(fig, ax, gdf, vmin, vmax):
     return fig, ax, gdf_boundaries
 
 def plot_depots(fig, ax, gdf):
+    gdf.to_crs(7131)
     gdf.plot(ax=ax,
              legend=True,
              markersize=1500,
@@ -99,7 +102,50 @@ def plot_depots(fig, ax, gdf):
              edgecolor='k',
              marker='p',
              legend_kwds={'label':'Depot'})
+    
+    #added to help prject the figure to 7131
+    radius = gdf.iloc[0]['geometry'].buffer(.1/111).boundary
+    radius = gpd.GeoSeries(radius, crs='7131' )
+    
+    #radius.to_crs(4326)
+    radius.plot(ax=ax,
+                color='darkorange',
+                linewidth=4,
+                linestyle='--',
+                label="Direct Drone-Only",
+                alpha=0.8)
+    
     return fig, ax
+
+def plot_test_points(fig, ax):
+    #geometry = [Point(x,y) for x,y in zip(API_df['Lon'], API_df['Lat'])]
+    #API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:7131", geometry=geometry)
+    
+    data = {'name': ['test point 1', 'test point 2', 'test point 3', 'test point 4']}
+    df = pd.DataFrame(data)
+    #geometry = [Point(-122.40099, 37.71257), Point(-122.36172, 37.73979), Point(-122.40162, 37.77550), Point(-122.44097, 37.74424)]
+    geometry = [Point(-122.40099, 37.71257), Point(-122.36967, 37.73979), Point(-122.40162, 37.77550), Point(-122.43273, 37.74424)]
+    
+    gdf = gpd.GeoDataFrame(df, crs='EPSG:7131', geometry=geometry)
+    gdf.plot(ax=ax,
+              markersize=500)
+    
+    return fig, ax
+
+# def plot_test_points(fig, ax):
+#     #geometry = [Point(x,y) for x,y in zip(API_df['Lon'], API_df['Lat'])]
+#     #API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:7131", geometry=geometry)
+    
+#     data = {'name': ['test point 1', 'test point 2', 'test point 3', 'test point 4']}
+#     df = pd.DataFrame(data)
+#     geometry = [Point(-13625615.87939257, 4538900.789086343), Point(-122.36172, 37.73979), Point(-122.40162, 37.77550), Point(-122.44097, 37.74424)]
+    
+#     gdf = gpd.GeoDataFrame(df, crs='EPSG:3857', geometry=geometry)
+#     gdf.plot(ax=ax,
+#              markersize=500)
+    
+#     return fig, ax
+
 
 def plot_bus_routes(fig, ax, gdf):
     gdf.plot(ax=ax,
@@ -108,29 +154,100 @@ def plot_bus_routes(fig, ax, gdf):
     return fig, ax
 
 def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
-
+    #gdf.to_crs(7131, inplace=True)
     gdf.drop_duplicates(subset=['geometry'], inplace=True)
 
     for i in range(len(gdf)):
         depot_loc = gdf.iloc[i]['geometry']
+        
         radius = gdf.iloc[i]['geometry'].buffer(delivery_radius/111).boundary
-        radius = gpd.GeoSeries(radius, crs=4326)
+        radius = gpd.GeoSeries(radius, crs='7131' )
+        
+        #radius.to_crs(4326)
         radius.plot(ax=ax,
                     color='k',
                     linewidth=4,
                     linestyle='--',
                     figsize=figsize,
-                    label="Direct, Drone-Only",
+                    label="Direct Drone-Only",
                     alpha=0.8)
     
-    return fig, ax
+    return fig, ax, radius
+
+# def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
+#     gdf.to_crs(3857, inplace=True)
+#     gdf.drop_duplicates(subset=['geometry'], inplace=True)
+
+#     for i in range(len(gdf)):
+#         depot_loc = gdf.iloc[i]['geometry']
+        
+#         r = gdf.iloc[i]['geometry'].buffer(delivery_radius*1000).boundary
+#         radius = gpd.GeoSeries(r, crs="EPSG:3857" )
+#         radius = radius.to_crs(4326)
+#         #radius.to_crs(4326)
+#         radius.plot(ax=ax,
+#                     color='k',
+#                     linewidth=4,
+#                     linestyle='--',
+#                     figsize=figsize,
+#                     label="Direct Drone-Only",
+#                     alpha=0.8)
+    
+#     return fig, ax, radius
+
+# def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
+#     #gdf.to_crs(3171, inplace=True)
+#     gdf.drop_duplicates(subset=['geometry'], inplace=True)
+
+#     for i in range(len(gdf)):
+#         depot_loc = gdf.iloc[i]['geometry']
+        
+#         r = gdf.iloc[i]['geometry'].buffer(delivery_radius/88).boundary
+#         radius = gpd.GeoSeries(r, crs="EPSG:4326" )
+#         radius = radius.to_crs(4326)
+#         #radius.to_crs(4326)
+#         radius.plot(ax=ax,
+#                     color='k',
+#                     linewidth=4,
+#                     linestyle='--',
+#                     figsize=figsize,
+#                     label="Direct Drone-Only",
+#                     alpha=0.8)
+    
+#     return fig, ax, radius
+
+
+# def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
+#     #gdf.to_crs(3171, inplace=True)
+#     gdf.drop_duplicates(subset=['geometry'], inplace=True)
+
+#     for i in range(len(gdf)):
+#         depot_loc = gdf.iloc[i]['geometry']
+        
+#         r = gdf.iloc[i]['geometry']
+#         ellipse = ((r.x, r.y), (delivery_radius/88, delivery_radius/111), 0)
+        
+#         #r = gdf.iloc[i]['geometry'].buffer(delivery_radius/88).boundary
+#         radius = gpd.GeoSeries(r, crs="EPSG:4326" )
+#         radius = radius.to_crs(4326)
+#         #radius.to_crs(4326)
+#         radius.plot(ax=ax,
+#                     color='k',
+#                     linewidth=4,
+#                     linestyle='--',
+#                     figsize=figsize,
+#                     label="Direct Drone-Only",
+#                     alpha=0.8)
+    
+#     return fig, ax, radius
+
 
 def plot_recharging_stations(fig, ax, gdf, delivery_radius, figsize):
     
     gdf.plot(ax=ax,
              legend=True,
              markersize=1500,
-             color='darkorange',
+             color='lightgreen',
              edgecolor='k',
              marker='P',
              legend_kwds={'label':'Recharge Locations'})
@@ -138,15 +255,23 @@ def plot_recharging_stations(fig, ax, gdf, delivery_radius, figsize):
     for i in range(len(gdf)):
         recharge_loc = gdf.iloc[i]['geometry']
         radius = gdf.iloc[i]['geometry'].buffer(delivery_radius/111).boundary
-        radius = gpd.GeoSeries(radius, crs=4326)
+        radius = gpd.GeoSeries(radius, crs='7131' )
         radius.plot(ax=ax,
                     color='k',
                     linewidth=4,
                     linestyle='--',
                     figsize=figsize,
-                    label="Direct, Drone-Only",
+                    label="Direct Drone-Only",
                     alpha=0.8)
         
+    #plt.title('Depot and Recharging Locations in San Francisco', fontsize=24)
+    
+    return fig, ax
+
+def add_legend_recharging(fig, ax):
+    ax.legend(['Depot Location', 'Recharging Site'], loc='center left', bbox_to_anchor=(1, 0.5), fontsize=20)
+    plt.title('Depot and Recharging Locations in San Francisco', fontsize=24)
+    
     return fig, ax
 
 def plot_recharing_trips(fig, ax, gdf, vmin, vmax):
@@ -405,9 +530,10 @@ if __name__ == '__main__':
     
     #get the vmin and vmax values for trip time across modes
     trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
+    #trip_main_feas_gdf.to_crs(7131, inplace=True)
     
     #add CO2 emissions
-    trip_main_feas_gdf['CO2 Emissions'] = trip_main_feas_gdf['Total Dist'] * 0.070  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
+    trip_main_feas_gdf['CO2 Emissions'] = trip_main_feas_gdf['Total Dist'] * 0.012 #kg/km  #(old source, see paper for new data) 70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
     
     #------------------------Parameters----------------------------------------
     delivery_radius = 3.5 #km
@@ -450,7 +576,7 @@ if __name__ == '__main__':
     API_driving['avg speed'] = (API_driving['distance']/1000*0.621371) / (API_driving['duration in traffic (min)']/60) #speed in miles per hour
     API_driving['Fuel Consumption (gal)'] = API_driving['duration in traffic (min)']/60* (1/(24.4*(1/API_driving['avg speed']))) #1.025 based on 24.4 MPG car efficienct, 25 mph hour average speed
     API_driving['CO2 Emissions Driving'] = API_driving['Fuel Consumption (gal)'] * 8.887 #kg on CO2 per gallon
-    API_bicycling['CO2 Emissions Bicycling'] = API_bicycling['distance']/1000 * 0.054 #CO2 emitted per km  #http://large.stanford.edu/courses/2022/ph240/schutt2/
+    API_bicycling['CO2 Emissions Bicycling'] = API_bicycling['distance']/1000 * 0.0048 #kg CO2 emitted per km  #http://large.stanford.edu/courses/2022/ph240/schutt2/ (old source, see writeup)
     
     #API_df = API_driving.merge(right=API_bicycling, how='inner', on='destinations').fillna(0)
     API_df = pd.concat([API_bicycling, API_driving])
@@ -458,7 +584,7 @@ if __name__ == '__main__':
     
     #create GeoDataFrame as well
     geometry = [Point(x,y) for x,y in zip(API_df['Lon'], API_df['Lat'])]
-    API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:4326", geometry=geometry)
+    API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:7131", geometry=geometry)
     
     
     #-------------------------Calc the recharging case-------------------------
@@ -469,7 +595,7 @@ if __name__ == '__main__':
                     }
     recharge_loc_df = pd.DataFrame(recharge_loc)
     geometry = [Point(x,y) for x,y in zip(recharge_loc['Lon'], recharge_loc['Lat'])]
-    recharge_gdf = gpd.GeoDataFrame(recharge_loc, crs='EPSG:4326', geometry=geometry)
+    recharge_gdf = gpd.GeoDataFrame(recharge_loc, crs='EPSG:7131', geometry=geometry)
     
    
     #path_ls, shortest_dist_ls = recharging.gen_recharge_trips(sites, depots_df, recharge_loc_df, delivery_radius)
@@ -483,7 +609,7 @@ if __name__ == '__main__':
     recharge_trip_df['one-way trip time (min)'] = recharge_trip_df['Shortest Round-Trip Dist (km)'] / 0.00777 / 60 / 2 #divide by 2 to get the one-way trip time
     
     geometry = [Point(x,y) for x,y in zip(recharge_trip_df['Lon'], recharge_trip_df['Lat'])]
-    recharge_trip_gdf = gpd.GeoDataFrame(recharge_trip_df, crs="EPSG:4326", geometry=geometry)
+    recharge_trip_gdf = gpd.GeoDataFrame(recharge_trip_df, crs="EPSG:7131", geometry=geometry)
     recharge_trip_gdf = recharge_trip_gdf[recharge_trip_gdf['one-way trip time (min)'] < 120] #remove some weird outliers with 4,290 minutes of trip time
     
 
@@ -509,8 +635,8 @@ if __name__ == '__main__':
     combined_gdf_recharging['delta_to_hitch'] = combined_gdf_recharging['one-way trip time (min)'] - combined_gdf_recharging['full time (min)']
     combined_gdf_recharging['delta_to_hitch (perc)'] = (combined_gdf_recharging['delta_to_hitch'] / combined_gdf_recharging['one-way trip time (min)'])*100
     
-    combined_gdf_recharging['CO2 Emissions Recharging'] = combined_gdf_recharging['Shortest Round-Trip Dist (km)'] * 0.070  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
-    combined_gdf_recharging['CO2 Emissions Hitchhiking'] = combined_gdf_recharging['Total Dist'] * 0.070  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
+    combined_gdf_recharging['CO2 Emissions Recharging'] = combined_gdf_recharging['Shortest Round-Trip Dist (km)'] * 0.012  #kg/km  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
+    combined_gdf_recharging['CO2 Emissions Hitchhiking'] = combined_gdf_recharging['Total Dist'] * 0.012  #kg/km  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
     
     combined_gdf_recharging['delta_to_hitch CO2'] = combined_gdf_recharging['CO2 Emissions Recharging'] - combined_gdf_recharging['CO2 Emissions Hitchhiking']
     combined_gdf_recharging['delta_to_hitch CO2 (perc)'] = (combined_gdf_recharging['delta_to_hitch CO2'] / combined_gdf_recharging['CO2 Emissions Recharging'])*100
@@ -646,6 +772,16 @@ if __name__ == '__main__':
     # fig, ax = plot_depots(fig, ax, depots_gdf)
     # fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
+    # Test plot
+    fig, ax = init_fig(figsize=(8,8))
+    fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    fig, ax = plot_depots(fig, ax, depots_gdf)
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(8,8))
+    fig, ax = plot_test_points(fig, ax)
+    
+    #trip_main_feas_gdf.to_crs(7131, inplace=True) #bring trip_main_feas_gdf to the right crs just to be sure
     
     #----Remove bug points from Hitchhiking data
     #trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
@@ -655,7 +791,7 @@ if __name__ == '__main__':
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_travel_time(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
@@ -663,7 +799,7 @@ if __name__ == '__main__':
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_CO2_emissions(fig, ax, trip_main_feas_gdf, vmin_CO2, vmax_CO2) 
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     # #boundaries version
     # fig, ax = init_fig(figsize=(10,10))
@@ -680,8 +816,9 @@ if __name__ == '__main__':
     #fig, ax = plot_zoning(SF_zoning)
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    #fig, ax = add_legend_recharging(fig, ax)
     
     #plot the recharging trip
     fig, ax = init_fig(figsize=(10,10))
@@ -690,7 +827,7 @@ if __name__ == '__main__':
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_recharing_trips(fig, ax, combined_gdf_recharging, vmin_trip, vmax_trip)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
     
     fig, ax = init_fig(figsize=(10,10))
@@ -699,7 +836,7 @@ if __name__ == '__main__':
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_recharing_CO2(fig, ax, combined_gdf_recharging, vmin_CO2, vmax_CO2)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
 
     
@@ -771,7 +908,7 @@ if __name__ == '__main__':
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_driving(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
@@ -779,7 +916,7 @@ if __name__ == '__main__':
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_bicycling(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
@@ -788,7 +925,7 @@ if __name__ == '__main__':
     fig, ax = plot_delta_recharging(fig, ax, combined_gdf_recharging, vmin_trip_perc, vmax_trip_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     
     #plot the CO2 delta
@@ -798,7 +935,7 @@ if __name__ == '__main__':
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_CO2_driving(fig, ax, combined_gdf, vmin_CO2_perc, vmax_CO2_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
 
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
@@ -806,7 +943,7 @@ if __name__ == '__main__':
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
     fig, ax = plot_delta_CO2_bicycling(fig, ax, combined_gdf, vmin_CO2_perc, vmax_CO2_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     fig, ax = init_fig(figsize=(10,10))
     fig, ax = plot_boundary(SF_boundary)
@@ -815,4 +952,4 @@ if __name__ == '__main__':
     fig, ax = plot_delta_CO2_recharging(fig, ax, combined_gdf_recharging, vmin_CO2_perc, vmax_CO2_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
     fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
-    fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))

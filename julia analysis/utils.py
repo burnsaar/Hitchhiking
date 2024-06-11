@@ -27,7 +27,7 @@ def plot_zoning(fig, ax, SF_zoning):
                    edgecolor='k',
                    hatch='/'
                    ) #                   legend_kwds={'label':'Zoned PDR-2'}
-    ax.legend(['Zoned PDR-2'], loc='center left', bbox_to_anchor=(1, 0.5), fontsize=20) #['Zoned PDR-2'], 
+    #ax.legend(['Zoned PDR-2'], loc='center left', bbox_to_anchor=(1, 0.5), fontsize=20) #['Zoned PDR-2'], 
     handles, previous_labels = ax.get_legend_handles_labels()
     return fig, ax, handles, previous_labels
 
@@ -40,7 +40,7 @@ def plot_depots(fig, ax, gdf, handles, previous_labels, marker='p', color='darko
              marker=marker,
              legend_kwds=legend_kwds)
     
-    ax.legend(['Zoned PDR-2', 'Depot Location'], loc='center left', bbox_to_anchor=(1, 0.5), fontsize=20)
+    # ax.legend(['Zoned PDR-2', 'Depot Location'], loc='center left', bbox_to_anchor=(1, 0.5), fontsize=20)
     plt.title('Depot Location and Zoning in San Francisco', fontsize=24)
     
     return fig, ax
