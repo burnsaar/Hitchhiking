@@ -34,7 +34,7 @@ lon_end=-122.350
 
 
 
-total_sites = 10000
+total_sites = 15000
 site_ls = []
 lat_ls = []
 lon_ls = []

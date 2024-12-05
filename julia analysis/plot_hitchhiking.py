@@ -12,12 +12,16 @@ import pickle
 import re
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import matplotlib
 from shapely.geometry import Point
 import SF_shapefiles as SF
 import read_julia_data as read_jl
 from matplotlib.colors import TwoSlopeNorm
 import trip_recharging as recharging
 import math
+import seaborn as sns
+from math import log
+from pyproj import Transformer
 #import contextily as cx
 #import geoplot as gplt
 #import distance_matrix_API as API
@@ -28,14 +32,25 @@ def roundup(x, base=5): #https://stackoverflow.com/questions/26454649/python-rou
 def init_fig(figsize):
     #fig, ax = plt.subplots(figsize = figsize)
     fig, ax = plt.subplots(figsize = figsize)
-    plt.xlim([-122.52480, -122.33907])
-    plt.ylim([37.70, 37.84])
-    plt.xlabel('longitude')
-    plt.ylabel('latitude')
+    # plt.xlim([-122.52480, -122.33907])
+    # plt.ylim([37.70, 37.84])
+    plt.xlim([-13640000, -13620000]) #3857
+    plt.ylim([4536800, 4554000])
+    # plt.xlim([42000, 57000]) #7131
+    # plt.ylim([18000, 32000])
+    # plt.xlabel('longitude')
+    # plt.ylabel('latitude')
     plt.legend()
+    plt.tick_params(
+        bottom=False,
+        left=False,
+        labelbottom=False,
+        labelleft=False)
+    #plt.axis('off')
     return fig, ax
 
 def plot_boundary(SF_boundary):
+    SF_boundary.to_crs(crs=3857, inplace=True)
     SF_boundary.boundary.plot(ax=ax, edgecolor = 'k')    
     return fig, ax
 
@@ -46,27 +61,36 @@ def plot_zoning(SF_zoning):
     return fig, ax
 
 def plot_travel_time(fig, ax, gdf, vmin, vmax):
+    gdf.to_crs(crs=3857, inplace=True)
+    cmap_reversed=matplotlib.cm.get_cmap('RdBu_r')
     gdf.plot(column='full time (min)', 
                 ax=ax,
-                cmap='viridis',
-                legend=True,
-                legend_kwds={'label':'Trip Time (minutes)'},
+                cmap=cmap_reversed,
+                # legend=True,
+                # legend_kwds={'label':'Trip Time (minutes)',
+                #              'shrink': .6
+                #              },
                 vmin=vmin,
                 vmax=vmax
                 ) #, 'orientation': 'horizontal'
-    plt.title('Hitchhiking Isochrone')
+    #plt.title('Hitchhiking Isochrone')
+    #ax.tick_params(labelsize = 100)
     return fig, ax
 
 def plot_CO2_emissions(fig, ax, gdf, vmin, vmax):
-    gdf.plot(column='CO2 Emissions', 
+    gdf.to_crs(crs=3857, inplace=True)
+    cmap_reversed=matplotlib.cm.get_cmap('RdBu_r')
+    gdf.plot(column='CO2 Emissions (kg)', 
                 ax=ax,
-                cmap='viridis',
-                legend=True,
-                legend_kwds={'label':'CO2 Emissions (kg)'},
+                cmap=cmap_reversed,
+                # legend=True,
+                # legend_kwds={'label':'CO2 Emissions (kg)',
+                #               'shrink': .6
+                              # , 'orientation': 'horizontal'},
                 vmin=vmin,
                 vmax=vmax
                 ) #, 'orientation': 'horizontal'
-    plt.title('Hitchhiking Isochrone')
+    #plt.title('Hitchhiking Isochrone')
     return fig, ax
 
 def plot_hitchhiking_time_boundaries(fig, ax, gdf, vmin, vmax):
@@ -94,7 +118,7 @@ def plot_hitchhiking_time_boundaries(fig, ax, gdf, vmin, vmax):
     return fig, ax, gdf_boundaries
 
 def plot_depots(fig, ax, gdf):
-    gdf.to_crs(7131)
+    gdf.to_crs(crs=3857, inplace=True)
     gdf.plot(ax=ax,
              legend=True,
              markersize=1500,
@@ -103,11 +127,11 @@ def plot_depots(fig, ax, gdf):
              marker='p',
              legend_kwds={'label':'Depot'})
     
-    #added to help prject the figure to 7131
+    #added to help prject the figure to 3857
     radius = gdf.iloc[0]['geometry'].buffer(.1/111).boundary
-    radius = gpd.GeoSeries(radius, crs='7131' )
+    radius = gpd.GeoSeries(radius, crs='3857' )
     
-    #radius.to_crs(4326)
+    #radius.to_crs(3857)
     radius.plot(ax=ax,
                 color='darkorange',
                 linewidth=4,
@@ -119,22 +143,54 @@ def plot_depots(fig, ax, gdf):
 
 def plot_test_points(fig, ax):
     #geometry = [Point(x,y) for x,y in zip(API_df['Lon'], API_df['Lat'])]
-    #API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:7131", geometry=geometry)
+    #API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:3857", geometry=geometry)
     
     data = {'name': ['test point 1', 'test point 2', 'test point 3', 'test point 4']}
+    #data = {'Location': ['Near', 'West', 'North', 'Northwest']}
     df = pd.DataFrame(data)
     #geometry = [Point(-122.40099, 37.71257), Point(-122.36172, 37.73979), Point(-122.40162, 37.77550), Point(-122.44097, 37.74424)]
-    geometry = [Point(-122.40099, 37.71257), Point(-122.36967, 37.73979), Point(-122.40162, 37.77550), Point(-122.43273, 37.74424)]
+    geometry = [Point(-13625615.87939257, 4538900.789086343), Point(-13621244.362989118, 4542731.801772947), Point(-13625686.010671768, 4547759.855839807), Point(-13630066.432634484, 4543358.240146457)] #3857
+    #geometry = [Point(52321.44627365216, 19846.693472826755), Point(55781.22232626364, 22870.436403677075), Point(52262.285869242005, 26831.417934795718), Point(48795.8792961158, 23360.7217422925)]
     
-    gdf = gpd.GeoDataFrame(df, crs='EPSG:7131', geometry=geometry)
+    #geometry = [Point(-122.40099, 37.71257), Point(-122.36967, 37.73979), Point(-122.40162, 37.77550), Point(-122.43273, 37.74424)]
+    
+    #geometry = [Point()]
+    
+    gdf = gpd.GeoDataFrame(df, crs=3857, geometry=geometry)
+    #gdf.to_crs(crs=3857, inplace=True)
+    #gdf.set_crs(crs=3857, inplace=True)
+    print(gdf)
+    print(gdf.crs)
     gdf.plot(ax=ax,
               markersize=500)
     
-    return fig, ax
+    return fig, ax, gdf
+
+def plot_pareto_points(fig, ax, df, geometry):
+    #geometry = [Point(x,y) for x,y in zip(API_df['Lon'], API_df['Lat'])]
+    #API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:3857", geometry=geometry)
+    
+    #data = {'name': ['test point 1', 'test point 2', 'test point 3', 'test point 4']}
+    #df = pd.DataFrame(data)
+    #geometry = [Point(-122.40099, 37.71257), Point(-122.36172, 37.73979), Point(-122.40162, 37.77550), Point(-122.44097, 37.74424)]
+    #geometry = [Point(-13625615.87939257, 4538900.789086343), Point(-13621244.362989118, 4542731.801772947), Point(-13625686.010671768, 4547759.855839807), Point(-13630066.432634484, 4543358.240146457)] #3857
+    #geometry = [Point(52321.44627365216, 19846.693472826755), Point(55781.22232626364, 22870.436403677075), Point(52262.285869242005, 26831.417934795718), Point(48795.8792961158, 23360.7217422925)]
+    
+    #geometry = [Point(-122.40099, 37.71257), Point(-122.36967, 37.73979), Point(-122.40162, 37.77550), Point(-122.43273, 37.74424)]
+    
+    gdf = gpd.GeoDataFrame(df, crs=3857, geometry=geometry)
+    #gdf.to_crs(crs=3857, inplace=True)
+    #gdf.set_crs(crs=3857, inplace=True)
+    print(gdf)
+    print(gdf.crs)
+    gdf.plot(ax=ax,
+              markersize=500)
+    
+    return fig, ax, gdf
 
 # def plot_test_points(fig, ax):
 #     #geometry = [Point(x,y) for x,y in zip(API_df['Lon'], API_df['Lat'])]
-#     #API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:7131", geometry=geometry)
+#     #API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:3857", geometry=geometry)
     
 #     data = {'name': ['test point 1', 'test point 2', 'test point 3', 'test point 4']}
 #     df = pd.DataFrame(data)
@@ -148,22 +204,39 @@ def plot_test_points(fig, ax):
 
 
 def plot_bus_routes(fig, ax, gdf):
+    gdf.to_crs(crs=3857, inplace=True)
     gdf.plot(ax=ax,
              color='slategrey',
              alpha=0.5)
     return fig, ax
 
+def plot_bus_routes_freq(fig, ax, gdf):
+    gdf.to_crs(crs=3857, inplace=True)
+    gdf.plot(ax=ax,
+             column='frequency',
+             cmap='RdYlGn_r',
+             # legend=True,
+             # legend_kwds={'label':'Bus Frequency (minutes)',
+             #              'shrink': .75,
+             #              'orientation':'horizontal'}
+             )
+    return fig, ax
+
 def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
-    #gdf.to_crs(7131, inplace=True)
+    gdf.to_crs(3857, inplace=True)
     gdf.drop_duplicates(subset=['geometry'], inplace=True)
 
     for i in range(len(gdf)):
         depot_loc = gdf.iloc[i]['geometry']
         
-        radius = gdf.iloc[i]['geometry'].buffer(delivery_radius/111).boundary
-        radius = gpd.GeoSeries(radius, crs='7131' )
+        a=3.5/(111.320*math.cos(37.7749*math.pi/180)) #how many degrees in longitude is 3.5 km, cos helps scale longtitude by latitude
+        b=3.5/111.320 #how many degrees latitude is 3.5 km
+        c=a/b #what is the ratio between a cartisian view of lat/long, e.g. b, and the projection version e.g. a
         
-        #radius.to_crs(4326)
+        radius = gdf.iloc[i]['geometry'].buffer(delivery_radius*1000*c).boundary
+        radius = gpd.GeoSeries(radius, crs='3857' )
+        
+        #radius.to_crs(3857)
         radius.plot(ax=ax,
                     color='k',
                     linewidth=4,
@@ -183,8 +256,8 @@ def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
         
 #         r = gdf.iloc[i]['geometry'].buffer(delivery_radius*1000).boundary
 #         radius = gpd.GeoSeries(r, crs="EPSG:3857" )
-#         radius = radius.to_crs(4326)
-#         #radius.to_crs(4326)
+#         radius = radius.to_crs(3857)
+#         #radius.to_crs(3857)
 #         radius.plot(ax=ax,
 #                     color='k',
 #                     linewidth=4,
@@ -203,9 +276,9 @@ def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
 #         depot_loc = gdf.iloc[i]['geometry']
         
 #         r = gdf.iloc[i]['geometry'].buffer(delivery_radius/88).boundary
-#         radius = gpd.GeoSeries(r, crs="EPSG:4326" )
-#         radius = radius.to_crs(4326)
-#         #radius.to_crs(4326)
+#         radius = gpd.GeoSeries(r, crs="EPSG:3857" )
+#         radius = radius.to_crs(3857)
+#         #radius.to_crs(3857)
 #         radius.plot(ax=ax,
 #                     color='k',
 #                     linewidth=4,
@@ -228,9 +301,9 @@ def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
 #         ellipse = ((r.x, r.y), (delivery_radius/88, delivery_radius/111), 0)
         
 #         #r = gdf.iloc[i]['geometry'].buffer(delivery_radius/88).boundary
-#         radius = gpd.GeoSeries(r, crs="EPSG:4326" )
-#         radius = radius.to_crs(4326)
-#         #radius.to_crs(4326)
+#         radius = gpd.GeoSeries(r, crs="EPSG:3857" )
+#         radius = radius.to_crs(3857)
+#         #radius.to_crs(3857)
 #         radius.plot(ax=ax,
 #                     color='k',
 #                     linewidth=4,
@@ -243,7 +316,7 @@ def plot_drone_rad(fig, ax, gdf, delivery_radius, figsize):
 
 
 def plot_recharging_stations(fig, ax, gdf, delivery_radius, figsize):
-    
+    gdf.to_crs(crs=3857, inplace=True)
     gdf.plot(ax=ax,
              legend=True,
              markersize=1500,
@@ -254,8 +327,17 @@ def plot_recharging_stations(fig, ax, gdf, delivery_radius, figsize):
     
     for i in range(len(gdf)):
         recharge_loc = gdf.iloc[i]['geometry']
-        radius = gdf.iloc[i]['geometry'].buffer(delivery_radius/111).boundary
-        radius = gpd.GeoSeries(radius, crs='7131' )
+        
+        a=3.5/(111.320*math.cos(37.7749*math.pi/180)) #how many degrees in longitude is 3.5 km, cos helps scale longtitude by latitude
+        b=3.5/111.320 #how many degrees latitude is 3.5 km
+        c=a/b #what is the ratio between a cartisian view of lat/long, e.g. b, and the projection version e.g. a
+        
+        radius = gdf.iloc[i]['geometry'].buffer(delivery_radius*1000*c).boundary
+        radius = gpd.GeoSeries(radius, crs='3857' )
+        
+        # radius = gdf.iloc[i]['geometry'].buffer(delivery_radius/111).boundary
+        # radius = gpd.GeoSeries(radius, crs='3857' )
+        
         radius.plot(ax=ax,
                     color='k',
                     linewidth=4,
@@ -269,59 +351,73 @@ def plot_recharging_stations(fig, ax, gdf, delivery_radius, figsize):
     return fig, ax
 
 def add_legend_recharging(fig, ax):
-    ax.legend(['Depot Location', 'Recharging Site'], loc='center left', bbox_to_anchor=(1, 0.5), fontsize=20)
+    #ax.legend(['Depot Location', 'Recharging Site'], loc='center left', bbox_to_anchor=(1, 0.5), fontsize=20)
     plt.title('Depot and Recharging Locations in San Francisco', fontsize=24)
     
     return fig, ax
 
 def plot_recharing_trips(fig, ax, gdf, vmin, vmax):
+    gdf.to_crs(crs=3857, inplace=True)
+    cmap_reversed=matplotlib.cm.get_cmap('RdBu_r')
     gdf.plot(column='one-way trip time (min)', 
                 ax=ax,
-                cmap='viridis',
-                legend=True,
-                legend_kwds={'label':'Trip Time (minutes)'},
+                cmap=cmap_reversed,
+                # legend=True,
+                # legend_kwds={'label':'Trip Time (minutes)',
+                #              'shrink': .6,
+                #              }, #'orientation': 'horizontal'
                 vmin=vmin,
-                vmax=vmax) #, 'orientation': 'horizontal'
-    plt.title('Recharging Isochrone')
+                vmax=vmax
+                ) #, 'orientation': 'horizontal'
+    #plt.title('Recharging Isochrone')
     
     return fig, ax
 
 def plot_recharing_CO2(fig, ax, gdf, vmin, vmax):
-    gdf.plot(column='CO2 Emissions Recharging', 
+    cmap_reversed=matplotlib.cm.get_cmap('RdBu_r')
+    gdf.plot(column='CO2 Emissions Recharging (kg)', 
                 ax=ax,
-                cmap='viridis',
-                legend=True,
-                legend_kwds={'label':'CO2 Emissions(kg))'},
+                cmap=cmap_reversed,
+                # legend=True,
+                # legend_kwds={'label':'CO2 Emissions(kg)',
+                #              'shrink': .6},
                 vmin=vmin,
                 vmax=vmax) #, 'orientation': 'horizontal'
-    plt.title('Recharging Isochrone')
+    #plt.title('Recharging Isochrone')
     
     return fig, ax
 
 def plot_driving_time(fig, ax, gdf, vmin, vmax):
     gdf_driving = gdf[gdf['mode'] == 'driving']
+    gdf_driving.to_crs(crs=3857, inplace=True)
+    cmap_reversed=matplotlib.cm.get_cmap('RdBu_r')
     gdf_driving.plot(column='duration in traffic (min)', 
                 ax=ax,
-                cmap='viridis',
-                legend=True,
-                legend_kwds={'label':'Driving Time (minutes)'},
+                cmap=cmap_reversed,
+                # legend=True,
+                # legend_kwds={'label':'Driving Time (minutes)',
+                #              'shrink': .6},
                 vmin=vmin,
-                vmax=vmax)
-    plt.title('Driving Isochrone (with traffic)')
+                vmax=vmax
+                )
+    #plt.title('Driving Isochrone')
     
     return fig, ax
 
 def plot_driving_CO2_emissions(fig, ax, gdf, vmin, vmax):
+    cmap_reversed=matplotlib.cm.get_cmap('RdBu_r')
     gdf_driving = gdf[gdf['mode'] == 'driving']
-    gdf_driving.plot(column='CO2 Emissions Driving', 
+    gdf_driving.to_crs(crs=3857, inplace=True)
+    gdf_driving.plot(column='CO2 Emissions Driving (kg)', 
                 ax=ax,
-                cmap='viridis',
+                cmap=cmap_reversed,
                 vmin=vmin,
                 vmax=vmax,
-                legend=True,
-                legend_kwds={'label':'CO2 Emissions (kg)'}
+                # legend=True,
+                # legend_kwds={'label':'CO2 Emissions (kg)',
+                #              'shrink': .6}
                 )
-    plt.title('CO2 Emissions Isochrone - Driving')
+    #plt.title('CO2 Emissions Isochrone - Driving')
     
     return fig, ax
 
@@ -351,15 +447,19 @@ def plot_driving_time_boundaries(fig, ax, gdf, vmin, vmax):
     return fig, ax, gdf_boundaries
 
 def plot_bicycling_time(fig, ax, gdf, vmin, vmax):
+    cmap_reversed=matplotlib.cm.get_cmap('RdBu_r')
     gdf_bicycling = gdf[gdf['mode'] == 'bicycling']
+    gdf_bicycling.to_crs(crs=3857, inplace=True)
     gdf_bicycling.plot(column='duration no traffic (min)', 
                 ax=ax,
-                cmap='viridis',
-                legend=True,
-                legend_kwds={'label':'Bicycling Time (minutes)'},
+                cmap=cmap_reversed,
+                # legend=True,
+                # legend_kwds={'label':'Bicycling Time (minutes)',
+                #              'shrink': .6},
                 vmin=vmin,
-                vmax=vmax)
-    plt.title('Bicycling Isochrone (no traffic)')
+                vmax=vmax
+                )
+    #plt.title('Bicycling Isochrone')
     
     return fig, ax
 
@@ -378,16 +478,19 @@ def plot_bicycling_time_contour(fig, ax, gdf, vmin, vmax):
     return fig, ax
 
 def plot_bicycling_CO2_emissions(fig, ax, gdf, vmin, vmax):
+    cmap_reversed=matplotlib.cm.get_cmap('RdBu_r')
     gdf_bicycling = gdf[gdf['mode'] == 'bicycling']
-    gdf_bicycling.plot(column='CO2 Emissions Bicycling', 
+    gdf_bicycling.to_crs(crs=3857, inplace=True)
+    gdf_bicycling.plot(column='CO2 Emissions Bicycling (kg)', 
                 ax=ax,
-                cmap='viridis',
+                cmap=cmap_reversed,
                 vmin=vmin,
                 vmax=vmax,
-                legend=True,
-                legend_kwds={'label':'CO2 Emissions (kg)'}
+                # legend=True,
+                # legend_kwds={'label':'CO2 Emissions (kg)',
+                #              'shrink': .6}
                 )
-    plt.title('CO2 Emissions Isochrone - Bicycling')
+    #plt.title('CO2 Emissions Isochrone - Bicycling')
     
     return fig, ax
 
@@ -417,23 +520,27 @@ def plot_bicycling_time_boundaries(fig, ax, gdf, vmin, vmax):
     return fig, ax, gdf_boundaries
 
 def plot_delta_recharging(fig, ax, gdf, vmin, vmax):
+    gdf.to_crs(crs=3857, inplace=True)
     vmin, vmax, vcenter = -160, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
-    gdf.plot(column='delta_to_hitch (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
+    gdf.plot(column='delta_to_hitch (perc)', ax=ax, cmap=cmap, norm=norm, legend=True, 
+             legend_kwds={'label': 'Percent Difference in Trip Time', 'shrink': .6})
     
     plt.title('Percent Difference in Trip Time Isochrone (Recharging - Hitchhiking)')
     return fig, ax
 
 def plot_delta_CO2_recharging(fig, ax, gdf, vmin, vmax):
+    gdf.to_crs(crs=3857, inplace=True)
     vmin, vmax, vcenter = -175, vmax, 0
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
-    gdf.plot(column='delta_to_hitch CO2 (perc)', ax=ax, cmap=cmap, norm=norm, legend=True) #norm=norm, 
+    gdf.plot(column='delta_to_hitch CO2 (perc)', ax=ax, cmap=cmap, norm=norm, legend=True,
+             legend_kwds={'label': 'Percent Difference in CO2 Emissions', 'shrink': .6}) #norm=norm, 
 
     plt.title('Percent Difference in CO2 Isochrone (Recharging - Hitchhiking)')
 
@@ -441,12 +548,15 @@ def plot_delta_CO2_recharging(fig, ax, gdf, vmin, vmax):
 
 def plot_delta_driving(fig, ax, gdf, vmin, vmax):
     gdf_driving = gdf[gdf['mode']=='driving']
+    gdf_driving.to_crs(crs=3857, inplace=True)
+    
     vmin, vmax, vcenter = -160, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
-    gdf_driving.plot(column='delta_to_hitch time driving (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
+    gdf_driving.plot(column='delta_to_hitch time driving (perc)', ax=ax, cmap=cmap, norm=norm, legend=True,
+                     legend_kwds={'label': 'Percent Difference in Trip Time', 'shrink': .6})
 
     plt.title('Percent Difference in Trip Time Isochrone (Driving - Hitchhiking)')
     
@@ -454,12 +564,14 @@ def plot_delta_driving(fig, ax, gdf, vmin, vmax):
 
 def plot_delta_CO2_driving(fig, ax, gdf, vmin, vmax):
     gdf_driving = gdf[gdf['mode']=='driving']
+    gdf_driving.to_crs(crs=3857, inplace=True)
     vmin, vmax, vcenter = -175, vmax, 0  #https://gis.stackexchange.com/questions/330008/center-normalize-choropleth-colors-in-geopandas
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
-    gdf_driving.plot(column='delta_to_hitch CO2 driving (perc)', ax=ax, cmap=cmap, norm=norm, legend=True) #norm=norm, 
+    gdf_driving.plot(column='delta_to_hitch CO2 driving (perc)', ax=ax, cmap=cmap, norm=norm, legend=True,
+                     legend_kwds={'label': 'Percent Difference in CO2 Emissions', 'shrink': .6}) #norm=norm, 
 
     plt.title('Percent Difference in CO2 Isochrone (Driving - Hitchhiking)')
     
@@ -467,13 +579,15 @@ def plot_delta_CO2_driving(fig, ax, gdf, vmin, vmax):
 
 def plot_delta_bicycling(fig, ax, gdf, vmin, vmax):
     gdf_bicycling = gdf[gdf['mode']=='bicycling']
+    gdf_bicycling.to_crs(crs=3857, inplace=True)
     
     vmin, vmax, vcenter = -160, vmax, 0
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
-    gdf_bicycling.plot(column='delta_to_hitch time bicycling (perc)', ax=ax, cmap=cmap, norm=norm, legend=True)
+    gdf_bicycling.plot(column='delta_to_hitch time bicycling (perc)', ax=ax, cmap=cmap, norm=norm, legend=True,
+                       legend_kwds={'label': 'Percent Difference in Trip Time', 'shrink': .6})
     
     plt.title('Percent Difference in Trip Time Isochrone (Bicycling - Hitchhiking)')
 
@@ -481,12 +595,14 @@ def plot_delta_bicycling(fig, ax, gdf, vmin, vmax):
 
 def plot_delta_CO2_bicycling(fig, ax, gdf, vmin, vmax):
     gdf_bicycling = gdf[gdf['mode']=='bicycling']
+    gdf_bicycling.to_crs(crs=3857, inplace=True)
     vmin, vmax, vcenter = -175, vmax, 0
     norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap='RdBu'
     cbar=plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     
-    gdf_bicycling.plot(column='delta_to_hitch CO2 bicycling (perc)', ax=ax, cmap=cmap, norm=norm, legend=True) #norm=norm, 
+    gdf_bicycling.plot(column='delta_to_hitch CO2 bicycling (perc)', ax=ax, cmap=cmap, norm=norm, legend=True,
+                       legend_kwds={'label': 'Percent Difference in CO2 Emissions', 'shrink': .6}) #norm=norm, 
 
     plt.title('Percent Difference in CO2 Isochrone (Bicycling - Hitchhiking)')
 
@@ -498,7 +614,8 @@ if __name__ == '__main__':
 
     #----------------------------Read in the Julia Data------------------------
     #set the results parent folder for the hitchhiking data
-    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-02-16 (d_100_s_100_iter_100_2281_sites)' #01-30 (d_100_s_100_iter_20)
+    #file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-02-16 (d_100_s_100_iter_100_2281_sites)' #01-30 (d_100_s_100_iter_20)
+    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-06-22 (d_100_s_100_iter_150_3415_sites)' #01-30 (d_100_s_100_iter_20)
     
     #load the depot locations
     d_file_paths = read_jl.data_paths(file_path + '/depots/*.dat')
@@ -530,11 +647,15 @@ if __name__ == '__main__':
     
     #get the vmin and vmax values for trip time across modes
     trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
-    #trip_main_feas_gdf.to_crs(7131, inplace=True)
+    #trip_main_feas_gdf.to_crs(3857, inplace=True)
     
     #add CO2 emissions
-    trip_main_feas_gdf['CO2 Emissions'] = trip_main_feas_gdf['Total Dist'] * 0.012 #kg/km  #(old source, see paper for new data) 70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
+    #trip_main_feas_gdf['CO2 Emissions'] = trip_main_feas_gdf['Total Dist'] * 0.0128 #kg/km  #(old source, see paper for new data) 70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
+    trip_main_feas_gdf['CO2 Emissions'] = trip_main_feas_gdf['Total Dist'] * 25 #g CO2/km
+    trip_main_feas_gdf['CO2 Emissions (kg)'] = trip_main_feas_gdf['CO2 Emissions'] /1000
     
+    #convert to google maps CRS
+    trip_main_feas_gdf.to_crs(crs=4326, inplace=True)
     #------------------------Parameters----------------------------------------
     delivery_radius = 3.5 #km
     
@@ -544,6 +665,7 @@ if __name__ == '__main__':
     #API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-27 (2281 sites)_datetime1700/API_results.dat' #5pm driving traffic
     #API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-27 (2281 sites)_UTCseconds1700/API_results.dat' #5pm driving traffic
     API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-03-28 (2281 sites)_datetime1700_pessimistic/API_results.dat' #5pm driving traffic
+    API_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/google maps API/results/2024-06-22 (3415 sites)_1000_best_guess/API_results_best_guess_1000.dat' #10am driving traffic 30 Sept 2024
     
     with open(API_file, 'rb') as temp:
         API_res = pickle.load(temp)
@@ -571,12 +693,18 @@ if __name__ == '__main__':
     API_bicycling['duration no traffic (min)'] = API_bicycling['duration no traffic']/60
     #API_driving['duration no traffic (min)'] = API_driving['duration no traffic']/60
     
-    #add in the CO2 emissions estimates
+    #add in the CO2 emissions estimates #these columns do not matter any more with per km basis calc below
     #API_driving['Fuel Consumption (gal)'] = API_driving['distance']/1000*0.621371 / 24.4 #https://afdc.energy.gov/data/10310
-    API_driving['avg speed'] = (API_driving['distance']/1000*0.621371) / (API_driving['duration in traffic (min)']/60) #speed in miles per hour
-    API_driving['Fuel Consumption (gal)'] = API_driving['duration in traffic (min)']/60* (1/(24.4*(1/API_driving['avg speed']))) #1.025 based on 24.4 MPG car efficienct, 25 mph hour average speed
-    API_driving['CO2 Emissions Driving'] = API_driving['Fuel Consumption (gal)'] * 8.887 #kg on CO2 per gallon
-    API_bicycling['CO2 Emissions Bicycling'] = API_bicycling['distance']/1000 * 0.0048 #kg CO2 emitted per km  #http://large.stanford.edu/courses/2022/ph240/schutt2/ (old source, see writeup)
+    #API_driving['avg speed'] = (API_driving['distance']/1000*0.621371) / (API_driving['duration in traffic (min)']/60) #speed in miles per hour
+    #API_driving['Fuel Consumption (gal)'] = API_driving['duration in traffic (min)']/60* (1/(24.4*(1/API_driving['avg speed']))) #1.025 based on 24.4 MPG car efficienct, 25 mph hour average speed
+    #API_driving['CO2 Emissions Driving'] = API_driving['Fuel Consumption (gal)'] * 8.887 #kg on CO2 per gallon
+    #API_bicycling['CO2 Emissions Bicycling'] = API_bicycling['distance']/1000 * 0.0052 #kg CO2 emitted per km  #http://large.stanford.edu/courses/2022/ph240/schutt2/ (old source, see writeup)
+    API_bicycling['CO2 Emissions Bicycling'] = API_bicycling['distance']/1000 * 2 * 10 #g CO2 emitted per km, 2x to make this round-trip distance
+    API_bicycling['CO2 Emissions Bicycling (kg)'] = API_bicycling['CO2 Emissions Bicycling'] / 1000
+    
+    #add in the CO2 emissions estimate per km basis
+    API_driving['CO2 Emissions Driving'] = API_driving['distance']/1000 * 2 * 303 #g CO2/km, 2x to make this round-trip distance
+    API_driving['CO2 Emissions Driving (kg)'] = API_driving['CO2 Emissions Driving'] / 1000
     
     #API_df = API_driving.merge(right=API_bicycling, how='inner', on='destinations').fillna(0)
     API_df = pd.concat([API_bicycling, API_driving])
@@ -584,7 +712,7 @@ if __name__ == '__main__':
     
     #create GeoDataFrame as well
     geometry = [Point(x,y) for x,y in zip(API_df['Lon'], API_df['Lat'])]
-    API_gdf = gpd.GeoDataFrame(API_df, crs="EPSG:7131", geometry=geometry)
+    API_gdf = gpd.GeoDataFrame(API_df, crs=4326, geometry=geometry) #, crs="EPSG:3857"
     
     
     #-------------------------Calc the recharging case-------------------------
@@ -595,12 +723,12 @@ if __name__ == '__main__':
                     }
     recharge_loc_df = pd.DataFrame(recharge_loc)
     geometry = [Point(x,y) for x,y in zip(recharge_loc['Lon'], recharge_loc['Lat'])]
-    recharge_gdf = gpd.GeoDataFrame(recharge_loc, crs='EPSG:7131', geometry=geometry)
+    recharge_gdf = gpd.GeoDataFrame(recharge_loc, crs='EPSG:4326', geometry=geometry)
     
    
     #path_ls, shortest_dist_ls = recharging.gen_recharge_trips(sites, depots_df, recharge_loc_df, delivery_radius)
     
-    recharge_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/recharging results/2024-02-28/recharging_trips.dat'
+    recharge_file = 'C:/Users/Aaron/Documents/GitHub/Hitchhiking/Hitchhiking/recharging results/2024-06-23/recharging_trips.dat'
     with open(recharge_file, 'rb') as temp:
         recharge_trip_df = pickle.load(temp)
         temp.close() 
@@ -609,7 +737,7 @@ if __name__ == '__main__':
     recharge_trip_df['one-way trip time (min)'] = recharge_trip_df['Shortest Round-Trip Dist (km)'] / 0.00777 / 60 / 2 #divide by 2 to get the one-way trip time
     
     geometry = [Point(x,y) for x,y in zip(recharge_trip_df['Lon'], recharge_trip_df['Lat'])]
-    recharge_trip_gdf = gpd.GeoDataFrame(recharge_trip_df, crs="EPSG:7131", geometry=geometry)
+    recharge_trip_gdf = gpd.GeoDataFrame(recharge_trip_df, crs="EPSG:4326", geometry=geometry)
     recharge_trip_gdf = recharge_trip_gdf[recharge_trip_gdf['one-way trip time (min)'] < 120] #remove some weird outliers with 4,290 minutes of trip time
     
 
@@ -631,16 +759,22 @@ if __name__ == '__main__':
     
     
     combined_gdf_recharging = pd.merge(recharge_trip_gdf, trip_main_gdf, how='left')
-    combined_gdf_recharging = combined_gdf_recharging[combined_gdf_recharging['Total Dist'] <= 7]
+
     combined_gdf_recharging['delta_to_hitch'] = combined_gdf_recharging['one-way trip time (min)'] - combined_gdf_recharging['full time (min)']
     combined_gdf_recharging['delta_to_hitch (perc)'] = (combined_gdf_recharging['delta_to_hitch'] / combined_gdf_recharging['one-way trip time (min)'])*100
     
-    combined_gdf_recharging['CO2 Emissions Recharging'] = combined_gdf_recharging['Shortest Round-Trip Dist (km)'] * 0.012  #kg/km  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
-    combined_gdf_recharging['CO2 Emissions Hitchhiking'] = combined_gdf_recharging['Total Dist'] * 0.012  #kg/km  #70 grams/km #https://www.sciencedirect.com/science/article/pii/S2666389922001805#:~:text=Our%20model%20shows%20that%20an,package%20in%20the%20United%20States.
+    combined_gdf_recharging['CO2 Emissions Recharging'] = combined_gdf_recharging['Shortest Round-Trip Dist (km)'] * 25 #g CO2/km
+    combined_gdf_recharging['CO2 Emissions Recharging (kg)'] = combined_gdf_recharging['CO2 Emissions Recharging'] / 1000
+    
+    combined_gdf_recharging['CO2 Emissions Hitchhiking'] = combined_gdf_recharging['Total Dist'] * 25 #g CO2/km
+    combined_gdf_recharging['CO2 Emissions Hitchhiking (kg)'] = combined_gdf_recharging['CO2 Emissions Hitchhiking'] / 1000
     
     combined_gdf_recharging['delta_to_hitch CO2'] = combined_gdf_recharging['CO2 Emissions Recharging'] - combined_gdf_recharging['CO2 Emissions Hitchhiking']
     combined_gdf_recharging['delta_to_hitch CO2 (perc)'] = (combined_gdf_recharging['delta_to_hitch CO2'] / combined_gdf_recharging['CO2 Emissions Recharging'])*100
     
+    combined_gdf_recharging_only = combined_gdf_recharging
+    combined_gdf_recharging_only.dropna(inplace=True)
+    combined_gdf_recharging = combined_gdf_recharging[combined_gdf_recharging['Total Dist'] <= 7]
     
     #-------------------------get the min and max values-----------------------
 
@@ -675,25 +809,25 @@ if __name__ == '__main__':
     
     #get the vmin and vmax values for trip time across modes    
     vmin_trip_perc = min(min(combined_gdf_driving['delta_to_hitch time driving (perc)']),
-                         min(combined_gdf_bicycling['delta_to_hitch time bicycling (perc)']),
-                         min(combined_gdf_recharging['delta_to_hitch (perc)'])
-                         )
+                          min(combined_gdf_bicycling['delta_to_hitch time bicycling (perc)']),
+                          min(combined_gdf_recharging['delta_to_hitch (perc)'])
+                          )
     vmax_trip_perc = max(max(combined_gdf_driving['delta_to_hitch time driving (perc)']),
-                         max(combined_gdf_bicycling['delta_to_hitch time bicycling (perc)']),
-                         max(combined_gdf_recharging['delta_to_hitch (perc)'])
-                         )
+                          max(combined_gdf_bicycling['delta_to_hitch time bicycling (perc)']),
+                          max(combined_gdf_recharging['delta_to_hitch (perc)'])
+                          )
     
     #add the CO2 min and max value TODO
     
-    vmin_CO2 = min(min(combined_gdf['CO2 Emissions']),
-                    min(API_bicycling['CO2 Emissions Bicycling']),
-                    min(API_driving['CO2 Emissions Driving']),
-                    min(combined_gdf_recharging['CO2 Emissions Recharging'])
+    vmin_CO2 = min(min(combined_gdf['CO2 Emissions (kg)']),
+                    min(API_bicycling['CO2 Emissions Bicycling (kg)']),
+                    min(API_driving['CO2 Emissions Driving (kg)']),
+                    min(combined_gdf_recharging['CO2 Emissions Recharging (kg)'])
                     )
-    vmax_CO2 = max(max(combined_gdf['CO2 Emissions']),
-                    max(API_bicycling['CO2 Emissions Bicycling']),
-                    max(API_driving['CO2 Emissions Driving']),
-                    max(combined_gdf_recharging['CO2 Emissions Recharging'])
+    vmax_CO2 = max(max(combined_gdf['CO2 Emissions (kg)']),
+                    max(API_bicycling['CO2 Emissions Bicycling (kg)']),
+                    max(API_driving['CO2 Emissions Driving (kg)']),
+                    max(combined_gdf_recharging['CO2 Emissions Recharging (kg)'])
                     )
     
     vmin_CO2_perc = min(min(combined_gdf_driving['delta_to_hitch CO2 driving (perc)']),
@@ -729,7 +863,7 @@ if __name__ == '__main__':
     
     
     
-    #---------------------------Plotting---------------------------------------
+    # #---------------------------Plotting---------------------------------------
     plt.rcParams['figure.dpi'] = 500
     
     #point to the map files for plotting
@@ -750,206 +884,559 @@ if __name__ == '__main__':
     SF.plot_muni(muni, SF_boundary, SF_zoning)
     SF.plot_muni_freq(bus_freq, SF_boundary, SF_zoning)
     
+    # fig, ax = init_fig(figsize=(8,6))
+    # fig, ax = plot_boundary(SF_boundary)
+    # # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes_freq(fig, ax, bus_freq)
     
     # #get the vmin and vmax values for trip time across modes
-    # trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
+    # # trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
     
-    # vmin_trip = min(min(trip_main_feas_gdf['full time (min)']),
-    #            min(recharge_trip_gdf['trip time (min)']),
-    #            min(API_gdf['duration (min)'])
-    #            )
-    # vmax_trip = max(max(trip_main_feas_gdf['full time (min)']),
-    #            max(recharge_trip_gdf['trip time (min)']),
-    #            max(API_gdf['duration (min)'])
-    #            )
+    # # vmin_trip = min(min(trip_main_feas_gdf['full time (min)']),
+    # #             min(recharge_trip_gdf['trip time (min)']),
+    # #             min(API_gdf['duration (min)'])
+    # #             )
+    # # vmax_trip = max(max(trip_main_feas_gdf['full time (min)']),
+    # #             max(recharge_trip_gdf['trip time (min)']),
+    # #             max(API_gdf['duration (min)'])
+    # #             )
     
-    # #plot the hitchhiking drone travel time graphic
+    # # #plot the hitchhiking drone travel time graphic
+    # # fig, ax = init_fig(figsize=(10,10))
+    # # fig, ax = plot_boundary(SF_boundary)
+    # # fig, ax = plot_zoning(SF_zoning)
+    # # fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    # # fig, ax = plot_travel_time(fig, ax, trips_gdf)
+    # # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # # fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    # # Test plot
+    # fig, ax = init_fig(figsize=(8,6))
+    # fig, ax = plot_boundary(SF_boundary)
+    # # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(8,6))
+    # fig, ax, gdf = plot_test_points(fig, ax)
+    
+    # #trip_main_feas_gdf.to_crs(3857, inplace=True) #bring trip_main_feas_gdf to the right crs just to be sure
+    
+    # # vmin_trip=0
+    # # vmax_trip=0
+    # # vmin_CO2=0
+    # # vmax_CO2=0
+    
+    # #----Remove bug points from Hitchhiking data
+    # #trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
     # fig, ax = init_fig(figsize=(10,10))
     # fig, ax = plot_boundary(SF_boundary)
-    # fig, ax = plot_zoning(SF_zoning)
-    # fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    # fig, ax = plot_travel_time(fig, ax, trips_gdf)
-    # fig, ax = plot_depots(fig, ax, depots_gdf)
-    # fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
-    
-    # Test plot
-    fig, ax = init_fig(figsize=(8,8))
-    fig, ax = plot_boundary(SF_boundary)
     # #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(8,8))
-    fig, ax = plot_test_points(fig, ax)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_travel_time(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
-    #trip_main_feas_gdf.to_crs(7131, inplace=True) #bring trip_main_feas_gdf to the right crs just to be sure
-    
-    #----Remove bug points from Hitchhiking data
-    #trip_main_feas_gdf = trip_main_gdf[trip_main_gdf['Total Dist'] <= 7]
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_travel_time(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
-    
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_CO2_emissions(fig, ax, trip_main_feas_gdf, vmin_CO2, vmax_CO2) 
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
-    
-    # #boundaries version
     # fig, ax = init_fig(figsize=(10,10))
     # fig, ax = plot_boundary(SF_boundary)
-    # fig, ax = plot_zoning(SF_zoning)
-    # fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    # fig, ax, gdf_hitchiking_boundaries = plot_hitchhiking_time_boundaries(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_CO2_emissions(fig, ax, trip_main_feas_gdf, vmin_CO2, vmax_CO2) 
     # fig, ax = plot_depots(fig, ax, depots_gdf)
-    # fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
-    #plot the recharging locations with data
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
-    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
-    #fig, ax = add_legend_recharging(fig, ax)
+    # # #boundaries version
+    # # fig, ax = init_fig(figsize=(10,10))
+    # # fig, ax = plot_boundary(SF_boundary)
+    # # fig, ax = plot_zoning(SF_zoning)
+    # # fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    # # fig, ax, gdf_hitchiking_boundaries = plot_hitchhiking_time_boundaries(fig, ax, trip_main_feas_gdf, vmin_trip, vmax_trip)
+    # # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # # fig, ax = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
-    #plot the recharging trip
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_recharing_trips(fig, ax, combined_gdf_recharging, vmin_trip, vmax_trip)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
-    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    # #plot the recharging locations with data
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax = add_legend_recharging(fig, ax)
     
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_recharing_CO2(fig, ax, combined_gdf_recharging, vmin_CO2, vmax_CO2)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
-    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    # # #plot the recharging trip
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_recharing_trips(fig, ax, combined_gdf_recharging_only, vmin_trip, vmax_trip)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_recharing_CO2(fig, ax, combined_gdf_recharging_only, vmin_CO2, vmax_CO2)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
 
     
-    
-    #plot the API data for driving
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_driving_time(fig, ax, API_gdf, vmin_trip, vmax_trip)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_driving_CO2_emissions(fig, ax, API_gdf, vmin_CO2, vmax_CO2) #TODO, update vmin_trip and vmax_trip to CO2 numbers
-    fig, ax = plot_depots(fig, ax, depots_gdf)
     
     # #plot the API data for driving
     # fig, ax = init_fig(figsize=(10,10))
     # fig, ax = plot_boundary(SF_boundary)
-    # fig, ax = plot_zoning(SF_zoning)
-    # fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    # fig, ax, gdf_driving_boundaries = plot_driving_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_driving_time(fig, ax, API_gdf, vmin_trip, vmax_trip)
     # fig, ax = plot_depots(fig, ax, depots_gdf)
     
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_driving_CO2_emissions(fig, ax, API_gdf, vmin_CO2, vmax_CO2) #TODO, update vmin_trip and vmax_trip to CO2 numbers
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
     
-    #plot the API data for bicycling
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_bicycling_time(fig, ax, API_gdf, vmin_trip, vmax_trip)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
+    # # #plot the API data for driving
+    # # fig, ax = init_fig(figsize=(10,10))
+    # # fig, ax = plot_boundary(SF_boundary)
+    # # fig, ax = plot_zoning(SF_zoning)
+    # # fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    # # fig, ax, gdf_driving_boundaries = plot_driving_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    # # fig, ax = plot_depots(fig, ax, depots_gdf)
     
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_bicycling_CO2_emissions(fig, ax, API_gdf, vmin_CO2, vmax_CO2)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
     
     # #plot the API data for bicycling
     # fig, ax = init_fig(figsize=(10,10))
     # fig, ax = plot_boundary(SF_boundary)
-    # fig, ax = plot_zoning(SF_zoning)
-    # fix, ax = plot_bus_routes(fig, ax, bus_freq)
-    # fig, ax, gdf_bicycling_boundaries = plot_bicycling_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_bicycling_time(fig, ax, API_gdf, vmin_trip, vmax_trip)
     # fig, ax = plot_depots(fig, ax, depots_gdf)
     
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_bicycling_CO2_emissions(fig, ax, API_gdf, vmin_CO2, vmax_CO2)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
     
-    # #get the vmin and vmax values for trip time across modes    
-    # vmin_trip_perc = min(min(combined_gdf['delta_to_hitch (perc)']),
-    #                 min(combined_gdf_recharging['delta_to_hitch (perc)'])
-    #                 )
-    # vmax_trip_perc = max(max(combined_gdf['delta_to_hitch (perc)']),
-    #                 max(combined_gdf_recharging['delta_to_hitch (perc)'])
-    #                 )
+    # # # #plot the API data for bicycling
+    # # # fig, ax = init_fig(figsize=(10,10))
+    # # # fig, ax = plot_boundary(SF_boundary)
+    # # # fig, ax = plot_zoning(SF_zoning)
+    # # # fix, ax = plot_bus_routes(fig, ax, bus_freq)
+    # # # fig, ax, gdf_bicycling_boundaries = plot_bicycling_time_boundaries(fig, ax, API_gdf, vmin_trip, vmax_trip)
+    # # # fig, ax = plot_depots(fig, ax, depots_gdf)
+    
+    
+    # # # #get the vmin and vmax values for trip time across modes    
+    # # # vmin_trip_perc = min(min(combined_gdf['delta_to_hitch (perc)']),
+    # # #                 min(combined_gdf_recharging['delta_to_hitch (perc)'])
+    # # #                 )
+    # # # vmax_trip_perc = max(max(combined_gdf['delta_to_hitch (perc)']),
+    # # #                 max(combined_gdf_recharging['delta_to_hitch (perc)'])
+    # #                 )
     
     
 
     
+    # # vmin_trip_perc = -200
+    # # vmax_trip_perc = 100
     
-    #plot the trip time delta
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_driving(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    # #plot the trip time delta
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_delta_driving(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_bicycling(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_delta_bicycling(fig, ax, combined_gdf, vmin_trip_perc, vmax_trip_perc)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_recharging(fig, ax, combined_gdf_recharging, vmin_trip_perc, vmax_trip_perc)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_delta_recharging(fig, ax, combined_gdf_recharging, vmin_trip_perc, vmax_trip_perc)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
     
-    #plot the CO2 delta
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_CO2_driving(fig, ax, combined_gdf, vmin_CO2_perc, vmax_CO2_perc)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    # #plot the CO2 delta
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_delta_CO2_driving(fig, ax, combined_gdf, vmin_CO2_perc, vmax_CO2_perc)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
 
-    fig, ax = init_fig(figsize=(10,10))
-    fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
-    fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_CO2_bicycling(fig, ax, combined_gdf, vmin_CO2_perc, vmax_CO2_perc)
-    fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_delta_CO2_bicycling(fig, ax, combined_gdf, vmin_CO2_perc, vmax_CO2_perc)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
     
-    fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = init_fig(figsize=(10,10))
+    # fig, ax = plot_boundary(SF_boundary)
+    # #fig, ax = plot_zoning(SF_zoning)
+    # fig, ax = plot_bus_routes(fig, ax, bus_freq)
+    # fig, ax = plot_delta_CO2_recharging(fig, ax, combined_gdf_recharging, vmin_CO2_perc, vmax_CO2_perc)
+    # fig, ax = plot_depots(fig, ax, depots_gdf)
+    # fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
+    # fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    
+    
+    
+    #Pareto Plot
+    #set the lat/lon bounds
+    lat_low = 37.736
+    lat_hi = 37.741
+    lat_mid_near = (lat_hi+lat_low)/2
+    lon_west = -122.430
+    lon_east = -122.419
+    lon_mid_near = (lon_west+lon_east)/2
+    
+    #pull the data point from car/bike
+    loc_data = combined_gdf[combined_gdf['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    #pull out the columns needed for driving
+    driving = loc_data[loc_data['mode'] == 'driving'] 
+    driving_data = driving[['mode', 'geometry', 'duration in traffic (min)', 'CO2 Emissions Driving']]
+    driving_data.rename(columns={'duration in traffic (min)': 'duration', 'CO2 Emissions Driving': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    #add the location and update the mode column
+    driving_data['Location'] = 'Near'
+    driving_data.replace(to_replace='driving', value='Driving', inplace=True)
+    #pull out the hitchhiking data from the driving data as well
+    HH_data = driving[['geometry', 'full time (min)', 'CO2 Emissions']]
+    HH_data.rename(columns={'full time (min)': 'duration'}, inplace=True)
+    HH_data['Mode'] = 'Hitchhiking'
+    HH_data['Location'] = 'Near'
+    #pull out the biking data
+    biking = loc_data[loc_data['mode'] == 'bicycling']
+    biking_data = biking[['mode', 'geometry', 'duration no traffic (min)', 'CO2 Emissions Bicycling']]
+    biking_data.rename(columns={'duration no traffic (min)': 'duration', 'CO2 Emissions Bicycling': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    biking_data.replace(to_replace='bicycling', value='E-biking', inplace=True)
+    biking_data['Location'] = 'Near'
+    #pull the data points from recharging
+    loc_data = combined_gdf_recharging[combined_gdf_recharging['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    recharging_data = loc_data[['geometry', 'one-way trip time (min)', 'CO2 Emissions Recharging']]
+    recharging_data.rename(columns={'one-way trip time (min)': 'duration', 'CO2 Emissions Recharging': 'CO2 Emissions'}, inplace=True)
+    recharging_data['Mode'] = 'Recharging'
+    recharging_data['Location'] = 'Near'
+    #combine the data
+    data_near = driving_data.append(HH_data, ignore_index=True)
+    data_near = data_near.append(biking_data, ignore_index=True)
+    data_near = data_near.append(recharging_data.to_crs(4326), ignore_index=True)
+    
+    #West
+    #set the lat/lon bounds
+    lat_low = 37.741
+    lat_hi = 37.753
+    lat_mid_west = (lat_hi+lat_low)/2
+    lon_west = -122.506
+    lon_east = -122.495
+    lon_mid_west = (lon_west+lon_east)/2
+    #pull the data point from car/bike
+    loc_data = combined_gdf[combined_gdf['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    #pull out the columns needed for driving
+    driving = loc_data[loc_data['mode'] == 'driving'] 
+    driving_data = driving[['mode', 'geometry', 'duration in traffic (min)', 'CO2 Emissions Driving']]
+    driving_data.rename(columns={'duration in traffic (min)': 'duration', 'CO2 Emissions Driving': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    #add the location and update the mode column
+    driving_data['Location'] = 'West'
+    driving_data.replace(to_replace='driving', value='Driving', inplace=True)
+    #pull out the hitchhiking data from the driving data as well
+    HH_data = driving[['geometry', 'full time (min)', 'CO2 Emissions']]
+    HH_data.rename(columns={'full time (min)': 'duration'}, inplace=True)
+    HH_data['Mode'] = 'Hitchhiking'
+    HH_data['Location'] = 'West'
+    #pull out the biking data
+    biking = loc_data[loc_data['mode'] == 'bicycling']
+    biking_data = biking[['mode', 'geometry', 'duration no traffic (min)', 'CO2 Emissions Bicycling']]
+    biking_data.rename(columns={'duration no traffic (min)': 'duration', 'CO2 Emissions Bicycling': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    biking_data.replace(to_replace='bicycling', value='E-biking', inplace=True)
+    biking_data['Location'] = 'West'
+    #pull the data points from recharging
+    loc_data = combined_gdf_recharging[combined_gdf_recharging['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    recharging_data = loc_data[['geometry', 'one-way trip time (min)', 'CO2 Emissions Recharging']]
+    recharging_data.rename(columns={'one-way trip time (min)': 'duration', 'CO2 Emissions Recharging': 'CO2 Emissions'}, inplace=True)
+    recharging_data['Mode'] = 'Recharging'
+    recharging_data['Location'] = 'West'
+    #combine the data
+    data_west = driving_data.append(HH_data, ignore_index=True)
+    data_west = data_west.append(biking_data, ignore_index=True)
+    data_west = data_west.append(recharging_data.to_crs(4326), ignore_index=True)
+    
+    
+    #North
+    #set the lat/lon bounds
+    lat_low = 37.795
+    lat_hi = 37.805
+    lat_mid_north = (lat_low+lat_hi)/2
+    lon_west = -122.423
+    lon_east = -122.413
+    lon_mid_north = (lon_west+lon_east)/2
+    #pull the data point from car/bike
+    loc_data = combined_gdf[combined_gdf['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    #pull out the columns needed for driving
+    driving = loc_data[loc_data['mode'] == 'driving'] 
+    driving_data = driving[['mode', 'geometry', 'duration in traffic (min)', 'CO2 Emissions Driving']]
+    driving_data.rename(columns={'duration in traffic (min)': 'duration', 'CO2 Emissions Driving': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    #add the location and update the mode column
+    driving_data['Location'] = 'North'
+    driving_data.replace(to_replace='driving', value='Driving', inplace=True)
+    #pull out the hitchhiking data from the driving data as well
+    HH_data = driving[['geometry', 'full time (min)', 'CO2 Emissions']]
+    HH_data.rename(columns={'full time (min)': 'duration'}, inplace=True)
+    HH_data['Mode'] = 'Hitchhiking'
+    HH_data['Location'] = 'North'
+    #pull out the biking data
+    biking = loc_data[loc_data['mode'] == 'bicycling']
+    biking_data = biking[['mode', 'geometry', 'duration no traffic (min)', 'CO2 Emissions Bicycling']]
+    biking_data.rename(columns={'duration no traffic (min)': 'duration', 'CO2 Emissions Bicycling': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    biking_data.replace(to_replace='bicycling', value='E-biking', inplace=True)
+    biking_data['Location'] = 'North'
+    #pull the data points from recharging
+    loc_data = combined_gdf_recharging[combined_gdf_recharging['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    recharging_data = loc_data[['geometry', 'one-way trip time (min)', 'CO2 Emissions Recharging']]
+    recharging_data.rename(columns={'one-way trip time (min)': 'duration', 'CO2 Emissions Recharging': 'CO2 Emissions'}, inplace=True)
+    recharging_data['Mode'] = 'Recharging'
+    recharging_data['Location'] = 'North'
+    #combine the data
+    data_north = driving_data.append(HH_data, ignore_index=True)
+    data_north = data_north.append(biking_data, ignore_index=True)
+    data_north = data_north.append(recharging_data.to_crs(4326), ignore_index=True)
+    
+    
+    #Northwest
+    #set the lat/lon bounds
+    lat_low = 37.772
+    lat_hi = 37.789
+    lat_mid_NW = (lat_low+lat_hi)/2
+    lon_west = -122.494
+    lon_east = -122.473
+    lon_mid_NW = (lon_west+lon_east)/2
+    #pull the data point from car/bike
+    loc_data = combined_gdf[combined_gdf['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    #pull out the columns needed for driving
+    driving = loc_data[loc_data['mode'] == 'driving'] 
+    driving_data = driving[['mode', 'geometry', 'duration in traffic (min)', 'CO2 Emissions Driving']]
+    driving_data.rename(columns={'duration in traffic (min)': 'duration', 'CO2 Emissions Driving': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    #add the location and update the mode column
+    driving_data['Location'] = 'Northwest'
+    driving_data.replace(to_replace='driving', value='Driving', inplace=True)
+    #pull out the hitchhiking data from the driving data as well
+    HH_data = driving[['geometry', 'full time (min)', 'CO2 Emissions']]
+    HH_data.rename(columns={'full time (min)': 'duration'}, inplace=True)
+    HH_data['Mode'] = 'Hitchhiking'
+    HH_data['Location'] = 'Northwest'
+    #pull out the biking data
+    biking = loc_data[loc_data['mode'] == 'bicycling']
+    biking_data = biking[['mode', 'geometry', 'duration no traffic (min)', 'CO2 Emissions Bicycling']]
+    biking_data.rename(columns={'duration no traffic (min)': 'duration', 'CO2 Emissions Bicycling': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    biking_data.replace(to_replace='bicycling', value='E-biking', inplace=True)
+    biking_data['Location'] = 'Northwest'
+    #pull the data points from recharging
+    loc_data = combined_gdf_recharging[combined_gdf_recharging['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    recharging_data = loc_data[['geometry', 'one-way trip time (min)', 'CO2 Emissions Recharging']]
+    recharging_data.rename(columns={'one-way trip time (min)': 'duration', 'CO2 Emissions Recharging': 'CO2 Emissions'}, inplace=True)
+    recharging_data['Mode'] = 'Recharging'
+    recharging_data['Location'] = 'Northwest'
+    #combine the data
+    data_NW = driving_data.append(HH_data, ignore_index=True)
+    data_NW = data_NW.append(biking_data, ignore_index=True)
+    data_NW = data_NW.append(recharging_data.to_crs(4326), ignore_index=True)
+    
+    #Southwest
+    #set the lat/lon bounds
+    lat_low = 37.708
+    lat_hi = 37.734
+    lat_mid_SW = (lat_low+lat_hi)/2
+    lon_west = -122.502
+    lon_east = -122.475
+    lon_mid_SW = (lon_west+lon_east)/2
+    #pull the data point from car/bike
+    loc_data = combined_gdf[combined_gdf['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    #pull out the columns needed for driving
+    driving = loc_data[loc_data['mode'] == 'driving'] 
+    driving_data = driving[['mode', 'geometry', 'duration in traffic (min)', 'CO2 Emissions Driving']]
+    driving_data.rename(columns={'duration in traffic (min)': 'duration', 'CO2 Emissions Driving': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    #add the location and update the mode column
+    driving_data['Location'] = 'Southwest'
+    driving_data.replace(to_replace='driving', value='Driving', inplace=True)
+    #pull out the hitchhiking data from the driving data as well
+    HH_data = driving[['geometry', 'full time (min)', 'CO2 Emissions']]
+    HH_data.rename(columns={'full time (min)': 'duration'}, inplace=True)
+    HH_data['Mode'] = 'Hitchhiking'
+    HH_data['Location'] = 'Southwest'
+    #pull out the biking data
+    biking = loc_data[loc_data['mode'] == 'bicycling']
+    biking_data = biking[['mode', 'geometry', 'duration no traffic (min)', 'CO2 Emissions Bicycling']]
+    biking_data.rename(columns={'duration no traffic (min)': 'duration', 'CO2 Emissions Bicycling': 'CO2 Emissions', 'mode':'Mode'}, inplace=True)
+    biking_data.replace(to_replace='bicycling', value='E-biking', inplace=True)
+    biking_data['Location'] = 'Southwest'
+    #pull the data points from recharging
+    loc_data = combined_gdf_recharging[combined_gdf_recharging['Lat'].between(lat_low, lat_hi)]
+    loc_data = loc_data[loc_data['Lon'].between(lon_west, lon_east)]
+    recharging_data = loc_data[['geometry', 'one-way trip time (min)', 'CO2 Emissions Recharging']]
+    recharging_data.rename(columns={'one-way trip time (min)': 'duration', 'CO2 Emissions Recharging': 'CO2 Emissions'}, inplace=True)
+    recharging_data['Mode'] = 'Recharging'
+    recharging_data['Location'] = 'Southwest'
+    #combine the data
+    data_SW = driving_data.append(HH_data, ignore_index=True)
+    data_SW = data_SW.append(biking_data, ignore_index=True)
+    data_SW = data_SW.append(recharging_data.to_crs(4326), ignore_index=True)
+    
+
+    data = data_near.append(data_west, ignore_index=True)
+    data = data.append(data_north, ignore_index=True) 
+    data = data.append(data_NW, ignore_index=True)
+    data = data.append(data_SW, ignore_index=True)
+    
+    #log some of the columns
+    data['log CO2'] = np.log10(data['CO2 Emissions'])
+    data['log duration'] = np.log10(data['duration'])
+    
+    # plt.figure()
+    # sns.scatterplot(data=data, x='duration', y='CO2 Emissions', hue='Mode', style='Location',
+    #                 edgecolor='k', alpha =0.7,
+    #                 hue_order=['Recharging', 'Hitchhiking', 'E-biking', 'Driving'], legend=False)
+    
+    # plt.figure()
+    # sns.scatterplot(data=data, x='duration', y='log CO2', hue='Mode', style='Location',
+    #                 edgecolor='k', alpha =0.7,
+    #                 hue_order=['Recharging', 'Hitchhiking', 'E-biking', 'Driving'])
+    
+    # plt.figure()
+    # sns.scatterplot(data=data, x='log duration', y='log CO2', hue='Mode', style='Location',
+    #                 edgecolor='k', alpha =0.7,
+    #                 hue_order=['Recharging', 'Hitchhiking', 'E-biking', 'Driving'])
+    
+    
+    # #data = data[data['Mode'] != 'Driving']
+    # plt.figure()
+    # sns.scatterplot(data=data, x='duration', y='CO2 Emissions', hue='Mode', style='Location',
+    #                 edgecolor='k', alpha =0.7,
+    #                 hue_order=['Recharging', 'Hitchhiking', 'E-biking'])
+    
+    
+    #Jeremy's Pareto plots
+    mode_ls = []
+    med_dur_ls = []
+    med_emissions_ls = []
+    #pareto plot 2nd try
+    for mode in data_near['Mode'].unique():
+        sub_data = data_near[data_near['Mode']==mode]
+        med_dur = sub_data['duration'].median()
+        med_emissions = sub_data['CO2 Emissions'].median()/1000 #convert to kg for easy of plotting
+        mode_ls.append(mode)
+        med_dur_ls.append(med_dur)
+        med_emissions_ls.append(med_emissions)
+    data_near_med = pd.DataFrame({'Mode': mode_ls, 'duration': med_dur_ls, 'CO2 Emissions':med_emissions_ls})
+    
+    plt.figure()
+    sns.scatterplot(data=data_near_med, x='duration', y='CO2 Emissions', hue='Mode',
+                    edgecolor='k', marker='D', s=175, legend=False,
+                    hue_order=['Recharging', 'Hitchhiking', 'E-biking', 'Driving'], alpha=.7)
+    plt.xlabel('One-way Trip Duration (minutes)')
+    plt.ylabel('Round-Trip CO2 Emissions (kg)')
+    plt.xlim([-.4,21])
+    plt.xticks([0,5,10,15,20])
+    plt.ylim([-.1,2.05])
+    plt.yticks([0,.5,1,1.5,2])
+    
+    
+    data_far = data[data['Location']!='Near']
+    mode_ls=[]
+    loc_ls=[]
+    med_dur_ls=[]
+    med_emissions_ls=[]
+    for mode in data_far['Mode'].unique():
+        for loc in data_far['Location'].unique():
+            sub_data = data_far[(data_far['Mode']==mode) & (data_far['Location']==loc)]
+            med_dur = sub_data['duration'].median()
+            med_emissions = sub_data['CO2 Emissions'].median()/1000 #convert to kg for easy of plotting
+            mode_ls.append(mode)
+            loc_ls.append(loc)
+            med_dur_ls.append(med_dur)
+            med_emissions_ls.append(med_emissions)
+    data_far_med = pd.DataFrame({'Mode': mode_ls, 'Location':loc_ls, 'duration': med_dur_ls, 'CO2 Emissions':med_emissions_ls})
+    
+    plt.figure()
+    sns.scatterplot(data=data_far_med, x='duration', y='CO2 Emissions', hue='Mode', style='Location',
+                    edgecolor='k', s=300, legend=True,
+                    hue_order=['Recharging', 'Hitchhiking', 'E-biking', 'Driving'], alpha=.7)
+    plt.xlabel('One-way Trip Duration (minutes)')
+    plt.ylabel('Round-Trip CO2 Emissions (kg)')
+    plt.xlim([9,56])
+    #plt.ylim([-1,21.2])
+    
+    plt.figure()
+    sns.scatterplot(data=data_far_med, x='duration', y='CO2 Emissions', hue='Mode', style='Location',
+                    edgecolor='k', s=300, legend=False,
+                    hue_order=['Recharging', 'Hitchhiking', 'E-biking', 'Driving'], alpha=.7)
+    plt.xlabel('One-way Trip Duration (minutes)')
+    plt.ylabel('Round-Trip CO2 Emissions (kg)')
+    plt.xlim([9,56])
+    plt.ylim([-.4,9.4])
+    #plt.yticks([0,5,10,15,20])
+    
+    
+    
+    
+    data = {'name': ['Near', 'West', 'North', 'Northwest', 'Southwest']}
+    df = pd.DataFrame(data)
+    #geometry = [Point(-122.40099, 37.71257), Point(-122.36172, 37.73979), Point(-122.40162, 37.77550), Point(-122.44097, 37.74424)]
+    #geometry = [Point(-13625615.87939257, 4538900.789086343), Point(-13621244.362989118, 4542731.801772947), Point(-13625686.010671768, 4547759.855839807), Point(-13630066.432634484, 4543358.240146457)] #3857
+    #geometry = [Point(52321.44627365216, 19846.693472826755), Point(55781.22232626364, 22870.436403677075), Point(52262.285869242005, 26831.417934795718), Point(48795.8792961158, 23360.7217422925)]
+    
+    #geometry = [Point(-122.40099, 37.71257), Point(-122.36967, 37.73979), Point(-122.40162, 37.77550), Point(-122.43273, 37.74424)]
+    
+    transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857")
+    
+    geometry = [Point(transformer.transform(lat_mid_near, lon_mid_near)), 
+                Point(transformer.transform(lat_mid_west, lon_mid_west)), 
+                Point(transformer.transform(lat_mid_north, lon_mid_north)), 
+                Point(transformer.transform(lat_mid_NW, lon_mid_NW)),
+                Point(transformer.transform(lat_mid_SW, lon_mid_SW))]
+    
+    gdf = gpd.GeoDataFrame(df, crs=3857, geometry=geometry)
+    #gdf.to_crs(crs=3857, inplace=True)
+    #gdf.set_crs(crs=3857, inplace=True)
+    print(gdf)
+    print(gdf.crs)
+    
+    fig, ax = init_fig(figsize=(8,6))
     fig, ax = plot_boundary(SF_boundary)
-    #fig, ax = plot_zoning(SF_zoning)
+    # #fig, ax = plot_zoning(SF_zoning)
     fig, ax = plot_bus_routes(fig, ax, bus_freq)
-    fig, ax = plot_delta_CO2_recharging(fig, ax, combined_gdf_recharging, vmin_CO2_perc, vmax_CO2_perc)
     fig, ax = plot_depots(fig, ax, depots_gdf)
-    fig, ax = plot_recharging_stations(fig, ax, recharge_gdf, delivery_radius, figsize=(10,10))
-    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(10,10))
+    fig, ax, radius = plot_drone_rad(fig, ax, depots_gdf, delivery_radius, figsize=(8,6))
+    
+    #gdf.plot(ax=ax, markersize=500)
+    fig, ax, gdf = plot_pareto_points(fig, ax, df, geometry)
+
+    
+    

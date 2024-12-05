@@ -119,14 +119,20 @@ def plot_muni_freq(bus_freq, SF_boundary, SF_zoning):
     plt.ylim([37.70, 37.84])
     
     SF_boundary.boundary.plot(ax=ax, edgecolor = 'k')
-    SF_zoning.plot(ax=ax, legend = True) #color = 'gray'
+    #SF_zoning.plot(ax=ax, legend = True) #color = 'gray'
     
-    bus_freq.plot(ax=ax, linewidth = 0.5, column = 'frequency', legend = True,
-                   cmap = 'RdYlGn_r')
+    bus_freq.plot(ax=ax, linewidth = 0.5, 
+                  column = 'frequency', 
+                  legend = True,
+                  cmap = 'RdYlGn_r',
+                  legend_kwds={'label':'Trip Time (minutes)',
+                               'shrink': .6,
+                               'orientation':'horizontal'
+                                })
 
-    plt.xlabel('longitude')
-    plt.ylabel('latitude')
-    plt.title('Bus Frequency (minutes)')
+    #plt.xlabel('longitude')
+    #plt.ylabel('latitude')
+    #plt.title('Bus Frequency (minutes)')
     
     return
 

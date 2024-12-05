@@ -13,7 +13,7 @@ if __name__ == '__main__':
 #--------------Load Julia data---------------------------------------------------------------------------------------------
 
     #set the results parent folder
-    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-02-16 (d_100_s_100_iter_100_2281_sites)'
+    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-06-22 (d_100_s_100_iter_150_3415_sites)'
 
 
     #load the states for each trip, t
@@ -61,7 +61,8 @@ if __name__ == '__main__':
     # datetime_UTC = (dt - epoch_time).total_seconds()
     # print(datetime_UTC)
     
-    API_date = datetime(2024, 5, 15, 17) #should be 15 May 2024 at 10am or 5pm as the second case
+    #API_date = datetime(2024, 5, 15, 17) #should be 15 May 2024 at 10am or 5pm as the second case
+    API_date = datetime(2024, 9, 30, 10) #should be 30 Sept 2024 at 10am
 
     for i in range(len(trip_time_df)):
         for mode in ['driving', 'bicycling']:
@@ -75,7 +76,7 @@ if __name__ == '__main__':
                                                         destinations=destinations,
                                                         mode=mode,
                                                         departure_time=API_date,
-                                                        traffic_model="pessimistic", #"best guess"
+                                                        traffic_model="best_guess", #"best_guess" or "pessimistic"
                                                         units='metric')
             else:
                 response = googlemaps.client.distance_matrix(client=API_key, 
@@ -116,7 +117,7 @@ if __name__ == '__main__':
         os.makedirs(folder_path)
 
 
-    save_file = os.path.join(folder_path, 'API_results_pessimistic_1700.dat')
+    save_file = os.path.join(folder_path, 'API_results_best_guess_1000.dat')
 
     with open(save_file, 'wb') as file:
         pickle.dump(response_dict, file)

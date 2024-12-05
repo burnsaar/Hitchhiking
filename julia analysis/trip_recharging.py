@@ -39,6 +39,7 @@ if __name__ == '__main__':
     #----------------------------Read in the Julia Data------------------------
     #set the results parent folder
     file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-02-16 (d_100_s_100_iter_100_2281_sites)' #01-30 (d_100_s_100_iter_20)
+    file_path = 'C:/Users/Aaron/AppData/Local/Programs/Julia-1.6.7/MultiAgentAllocationTransit.jl/results/2024-06-22 (d_100_s_100_iter_150_3415_sites)'
     
     #load the depot locations
     d_file_paths = read_jl.data_paths(file_path + '/depots/*.dat')
@@ -69,16 +70,20 @@ if __name__ == '__main__':
     
     #------------------------Run trip estimates--------------------------------
     
-    depots_df.drop_duplicates(subset=['geometry'], inplace=True)
+    #depots_df.drop_duplicates(subset=['geometry'], inplace=True)
+    depots_df.reset_index(drop=True, inplace=True)
+    depots_df = depots_df.iloc[0]
+
+    #depots_df.drop_duplicates(subset=['Lat'], inplace=True)
     depots_df['Loc'] = 'Depot'
     
-    loc_df = pd.concat([depots_df, recharge_loc_df], join='inner', ignore_index=True)
+    loc_df = pd.concat([depots_df.to_frame().T, recharge_loc_df], join='inner', ignore_index=True)
     
     Path_ls = []
     Shortest_dist_ls = []
     
     for s in range(len(sites)):
-        #print(s)
+        print(s)
         site = sites.iloc[s]
         site['Loc'] = 'Delivery'
         

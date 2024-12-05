@@ -38,19 +38,19 @@ SF_zoning = SF.load_SF_zoning(SF_Zoning_file_path)
 depot = {'depot': [1]}
 df = pd.DataFrame(depot)
 geometry = [Point(-122.4012, 37.744045)]
-depot_config_parcel_gdf = gpd.GeoDataFrame(df, crs="EPSG:7131", geometry=geometry)
+depot_config_parcel_gdf = gpd.GeoDataFrame(df, crs="EPSG:4326", geometry=geometry)
 
 #depot_config_pharm
 depot = {'Store': ['Walgreens', 'Walgreens', 'CVS', 'Walgreens']}
 df = pd.DataFrame(depot)
 geometry = [Point(-122.42371, 37.78675), Point(-122.42225, 37.74267), Point(-122.47634, 37.72684), Point(-122.47597, 37.78084)]
-depot_config_pharm_gdf = gpd.GeoDataFrame(df, crs="EPSG:7131", geometry=geometry)
+depot_config_pharm_gdf = gpd.GeoDataFrame(df, crs="EPSG:3857", geometry=geometry)
 
 #depot_config_food
 depot = {'depot': [1]}
 df = pd.DataFrame(depot)
 geometry = [SF_boundary['geometry'][0].centroid]
-depot_config_food_gdf = gpd.GeoDataFrame(df, crs="EPSG:7131", geometry=geometry)
+depot_config_food_gdf = gpd.GeoDataFrame(df, crs="EPSG:3857", geometry=geometry)
 
 #plot the hitchhiking drone travel time graphic
 fig, ax = utils.init_fig(figsize=(10,10))
